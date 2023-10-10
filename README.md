@@ -1,0 +1,2 @@
+# go_tictok
+一个基于微服务框架使用Hertz和Kitex开发的简易版短视频demo
