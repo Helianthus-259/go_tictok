@@ -49,6 +49,7 @@ import (
 //			c.Next(ctx)
 //		}
 //	}
+
 var JwtMiddleware *jwt.HertzJWTMiddleware
 
 func InitJWT() {
@@ -90,16 +91,21 @@ func InitJWT() {
 			})
 		},
 		LoginResponse: func(ctx context.Context, c *app.RequestContext, code int, token string, expire time.Time) {
+			id, _ := c.Get("id")
 			c.JSON(http.StatusOK, utils.H{
-				"code":   errno.Success.ErrCode,
-				"token":  token,
-				"expire": expire.Format(time.RFC3339),
+				"status_code": errno.Success.ErrCode,
+				"status_msg":  "Success",
+				"user_id":     id,
+				"token":       token,
+				//"expire": expire.Format(time.RFC3339),
 			})
 		},
 		Unauthorized: func(ctx context.Context, c *app.RequestContext, code int, message string) {
 			c.JSON(http.StatusOK, utils.H{
-				"code":    errno.AuthorizationFailedErr.ErrCode,
-				"message": message,
+				"status_code": errno.AuthorizationFailedErr.ErrCode,
+				"status_msg":  message,
+				"user_id":     nil,
+				"token":       nil,
 			})
 		},
 		HTTPStatusMessageFunc: func(e error, ctx context.Context, c *app.RequestContext) string {

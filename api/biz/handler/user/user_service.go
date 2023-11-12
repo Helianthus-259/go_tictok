@@ -5,14 +5,13 @@ package user
 import (
 	user "api/biz/model/user"
 	rpcClient "api/biz/rpc"
-	"api/pkg/constants"
 	"api/pkg/mw"
 	"api/pkg/response"
 	"common-components/errno"
 	"common-components/logger"
 	"context"
+	"fmt"
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/cloudwego/hertz/pkg/protocol/consts"
 	"github.com/jinzhu/copier"
 	rpcUser "rpc/kitex_gen/user"
 )
@@ -23,16 +22,18 @@ func UserIndex(ctx context.Context, c *app.RequestContext) {
 	var err error
 	var req user.UserIndexRequest
 	err = c.BindAndValidate(&req)
+	fmt.Println(req)
 	if logger.CheckError(err, "UserIndexRequest BindAndValidate Failed") {
-		c.JSON(consts.StatusBadRequest, errno.ConvertErr(err))
+		response.SendResponse(c, errno.ConvertErr(err), nil)
 		return
 	}
-	v, _ := c.Get(constants.IdentityKey)
+	v := mw.JwtMiddleware.IdentityHandler(ctx, c)
 	params := rpcUser.UserIndexRequest{
 		UserId:   req.UserID,
-		MyUserId: v.(*rpcUser.User).Id,
+		MyUserId: v.(*user.User).ID,
 	}
 	User, err := rpcClient.UserIndex(context.Background(), &params)
+	fmt.Println("UserIndex err:", err)
 	if logger.CheckError(err, "rpcClient.UserClient.UserIndex Failed") {
 		response.SendResponse(c, errno.ConvertErr(err), nil)
 		return
@@ -47,12 +48,14 @@ func UserRegister(ctx context.Context, c *app.RequestContext) {
 	var req user.RegisterRequest
 	err = c.BindAndValidate(&req)
 	if logger.CheckError(err, "RegisterRequest BindAndValidate Failed") {
-		c.JSON(consts.StatusBadRequest, errno.ConvertErr(err))
+		response.SendResponse(c, errno.ConvertErr(err), nil)
 		return
 	}
+	//fmt.Println(req)
 	params := rpcUser.RegisterRequest{}
-	_ = copier.Copy(params, req)
-	err = rpcClient.UserRegister(context.Background(), &params)
+	_ = copier.Copy(&params, &req)
+	//fmt.Println(params)
+	err = rpcClient.Register(context.Background(), &params)
 	if logger.CheckError(err, "rpcClient.UserClient.UserRegister Failed") {
 		response.SendResponse(c, errno.ConvertErr(err), nil)
 		return
@@ -63,5 +66,21 @@ func UserRegister(ctx context.Context, c *app.RequestContext) {
 // UserLogin .
 // @router /douyin/user/login/ [POST]
 func UserLogin(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req user.LoginRequest
+	err = c.BindAndValidate(&req)
+	if logger.CheckError(err, "LoginRequestRequest BindAndValidate Failed") {
+		response.SendResponse(c, errno.ConvertErr(err), nil)
+		return
+	}
+	params := rpcUser.LoginRequest{}
+	_ = copier.Copy(&params, &req)
+	id, err := rpcClient.Login(context.Background(), &params)
+	if logger.CheckError(err, "rpcClient.UserClient.UserLogin Failed") {
+		response.SendResponse(c, errno.ConvertErr(err), nil)
+		return
+	}
+	c.Set("id", id)
+	fmt.Println("logining")
 	mw.JwtMiddleware.LoginHandler(ctx, c)
 }

@@ -6,6 +6,9 @@ enum ErrCode {
     ParamErrCode               = 10002
     UserAlreadyExistErrCode    = 10003
     AuthorizationFailedErrCode = 10004
+    UpdateFollowCountFailedErrCode = 10005
+    UpdateUserWorkCountFailedErrCode = 10006
+    UpdateUserFavoriteCountFailedErrCode = 10007
 }
 
 struct BaseResp {
@@ -15,8 +18,8 @@ struct BaseResp {
 
 // 用户注册请求结构体
 struct RegisterRequest {
-    1: string username // 用户期望的用户名
-    2: string password // 用户密码
+    1: string username (vt.min_size = "1")// 用户期望的用户名
+    2: string password (vt.min_size = "1")// 用户密码
 }
 
 // 用户注册响应结构体
@@ -28,8 +31,8 @@ struct RegisterResponse {
 
 // 用户登录请求结构体
 struct LoginRequest {
-    1: string username // 用户登录的用户名
-    2: string password // 用户登录的密码
+    1: string username (vt.min_size = "1")// 用户登录的用户名
+    2: string password (vt.min_size = "1")// 用户登录的密码
 }
 
 // 用户登录响应结构体
@@ -56,25 +59,14 @@ struct User {
 
 // 请求用户个人资料的请求结构体
 struct UserIndexRequest {
-    1: i64 user_id; // 请求个人资料信息的用户ID
-    2: i64 my_user_id; // 请求者的用户ID（可选）
+    1: i64 user_id (vt.min_size = "1")// 请求个人资料信息的用户ID
+    2: i64 my_user_id (vt.min_size = "1") // 请求者的用户ID（可选）
 }
 
 // 用户个人资料响应结构体
 struct UserIndexResponse {
     1: BaseResp base_resp
     2: User user; // 用户个人资料信息
-}
-
-// 验证用户令牌的请求结构体
-struct TokenVerifyRequest {
-    1: i64 user_id; // 需要验证令牌的用户ID
-    2: string tokenType; // 需要验证的令牌类型（例如，身份验证令牌类型）
-}
-
-// 令牌验证响应结构体
-struct TokenVerifyResponse {
-     1: BaseResp base_resp
 }
 
 // 增加关注数请求结构体
@@ -137,8 +129,7 @@ struct UpdateUserFavoriteCountResponse {
 service UserService {
     RegisterResponse Register(1: RegisterRequest request), // 用户注册接口
     LoginResponse Login(1: LoginRequest request), // 用户登录接口
-    TokenVerifyResponse TokenVerify(1: TokenVerifyRequest request), // 用户令牌验证接口
-    UserIndexResponse UserIndex(1: UserIndexRequest request), // 用户个人资料查询接口
+    UserIndexResponse UserIndex(1: UserIndexRequest request); // 用户个人资料查询接口
     AddFollowCountResponse AddFollowCount(1: AddFollowCountRequest request), // 增加关注数接口
     SubFollowCountResponse SubFollowCount(1: SubFollowCountRequest request), // 减少关注数接口
     GetUserListResponse GetUserList(1: GetUserListRequest request), // 获取用户列表接口

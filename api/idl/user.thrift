@@ -6,6 +6,9 @@ enum ErrCode {
     ParamErrCode               = 10002
     UserAlreadyExistErrCode    = 10003
     AuthorizationFailedErrCode = 10004
+    UpdateFollowCountFailedErrCode = 10005
+    UpdateUserWorkCountFailedErrCode = 10006
+    UpdateUserFavoriteCountFailedErrCode = 10007
 }
 
 struct BaseResp {

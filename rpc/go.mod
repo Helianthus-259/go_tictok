@@ -2,8 +2,6 @@ module rpc
 
 go 1.20
 
-replace github.com/apache/thrift => github.com/apache/thrift v0.13.0
-
 require (
 	github.com/apache/thrift v0.13.0
 	github.com/cloudwego/kitex v0.7.2
@@ -50,3 +48,5 @@ require (
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/apache/thrift => github.com/apache/thrift v0.13.0

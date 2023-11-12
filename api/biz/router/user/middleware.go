@@ -24,12 +24,10 @@ func _userMw() []app.HandlerFunc {
 
 func _userindexMw() []app.HandlerFunc {
 	// your code...
-	// 创建一个中间件切片
-	middlewares := []app.HandlerFunc{
-		// 添加身份验证中间件
-		mw.AuthenticationMiddleware(),
+	return []app.HandlerFunc{
+		// use jwt mw
+		mw.JwtMiddleware.MiddlewareFunc(),
 	}
-	return middlewares
 }
 
 func _loginMw() []app.HandlerFunc {

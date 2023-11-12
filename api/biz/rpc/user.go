@@ -1,12 +1,11 @@
 package rpc
 
 import (
-	"api/pkg/constants"
+	"common-components/constants"
 	"common-components/errno"
 	mw "common-components/rpc-middleware"
 	"github.com/cloudwego/kitex/client"
 	"github.com/cloudwego/kitex/pkg/rpcinfo"
-	"github.com/kitex-contrib/obs-opentelemetry/provider"
 	"github.com/kitex-contrib/obs-opentelemetry/tracing"
 	etcd "github.com/kitex-contrib/registry-etcd"
 	"golang.org/x/net/context"
@@ -28,14 +27,14 @@ func initUser() {
 	if err != nil {
 		panic(err)
 	}
-	p := provider.NewOpenTelemetryProvider(
-		provider.WithServiceName(constants.ApiServiceName),
-		provider.WithExportEndpoint(constants.ExportEndpoint),
-		provider.WithInsecure(),
-	)
-	defer func(ctx context.Context, p provider.OtelProvider) {
-		_ = p.Shutdown(ctx)
-	}(context.Background(), p)
+	//p := provider.NewOpenTelemetryProvider(
+	//	provider.WithServiceName(constants.ApiServiceName),
+	//	provider.WithExportEndpoint(constants.ExportEndpoint),
+	//	provider.WithInsecure(),
+	//)
+	//defer func(ctx context.Context, p provider.OtelProvider) {
+	//	_ = p.Shutdown(ctx)
+	//}(context.Background(), p)
 	c, err := userservice.NewClient(
 		constants.UserServiceName,
 		client.WithResolver(r),
@@ -51,8 +50,8 @@ func initUser() {
 	userClient = c
 }
 
-// UserRegister Rpc Call Register User
-func UserRegister(ctx context.Context, req *rpcUser.RegisterRequest) error {
+// Register Rpc Call Register User
+func Register(ctx context.Context, req *rpcUser.RegisterRequest) error {
 	resp, err := userClient.Register(ctx, req)
 	if err != nil {
 		return err
@@ -60,6 +59,7 @@ func UserRegister(ctx context.Context, req *rpcUser.RegisterRequest) error {
 	if resp.BaseResp.StatusCode != 0 {
 		return errno.NewErrNo(resp.BaseResp.StatusCode, resp.BaseResp.StatusMsg)
 	}
+
 	return nil
 }
 

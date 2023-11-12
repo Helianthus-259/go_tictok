@@ -33,7 +33,7 @@ const (
 	ApiServiceName   = "demoapi"
 	VideoServiceName = "demovideo"
 	UserServiceName  = "demouser"
-	MySQLDefaultDSN  = "gorm:gorm@tcp(localhost:3306)/gorm?charset=utf8&parseTime=True&loc=Local"
+	MySQLDefaultDSN  = "root:a123@tcp(127.0.0.1:3306)/tictok_base_db?charset=utf8mb4&parseTime=True&loc=Local"
 	TCP              = "tcp"
 	UserServiceAddr  = ":9000"
 	NoteServiceAddr  = ":10000"

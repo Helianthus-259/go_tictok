@@ -7,7 +7,7 @@ import (
 	"api/pkg/mw"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
-	hertzzap "github.com/hertz-contrib/obs-opentelemetry/logging/zap"
+	hertzlogrus "github.com/hertz-contrib/obs-opentelemetry/logging/logrus"
 	"github.com/hertz-contrib/obs-opentelemetry/tracing"
 	"github.com/hertz-contrib/pprof"
 )
@@ -16,7 +16,7 @@ func Init() {
 	rpc.Init()
 	mw.InitJWT()
 	// hlog init
-	hlog.SetLogger(hertzzap.NewLogger())
+	hlog.SetLogger(hertzlogrus.NewLogger())
 	hlog.SetLevel(hlog.LevelInfo)
 }
 
