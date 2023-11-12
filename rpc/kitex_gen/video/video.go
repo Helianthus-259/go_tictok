@@ -5,11 +5,393 @@ package video
 import (
 	"bytes"
 	"context"
+	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"github.com/apache/thrift/lib/go/thrift"
 	"rpc/kitex_gen/user"
 	"strings"
 )
+
+type ErrCode int64
+
+const (
+	ErrCode_SuccessCode                         ErrCode = 0
+	ErrCode_ServiceErrCode                      ErrCode = 1
+	ErrCode_ParamErrCode                        ErrCode = 2
+	ErrCode_MysqlErrCode                        ErrCode = 3
+	ErrCode_RedisErrCode                        ErrCode = 4
+	ErrCode_UserIsNotExistErrCode               ErrCode = 10005
+	ErrCode_PasswordIsNotVerifiedCode           ErrCode = 10006
+	ErrCode_AuthorizationFailedErrCode          ErrCode = 10007
+	ErrCode_UserAlreadyExistErrCode             ErrCode = 10008
+	ErrCode_UpdateUserCountFailedErrCode        ErrCode = 10009
+	ErrCode_FollowRelationAlreadyExistErrCode   ErrCode = 20010
+	ErrCode_FollowRelationNotExistErrCode       ErrCode = 20011
+	ErrCode_FavoriteActionErrCode               ErrCode = 30012
+	ErrCode_FavoriteAddFailedCode               ErrCode = 30013
+	ErrCode_FavoriteRelationAlreadyExistErrCode ErrCode = 30014
+	ErrCode_FavoriteRelationNotExistErrCode     ErrCode = 30015
+	ErrCode_ChatActionErrCode                   ErrCode = 40016
+	ErrCode_MessageAddFailedErrCode             ErrCode = 40017
+	ErrCode_FriendListNoPermissionErrCode       ErrCode = 40018
+	ErrCode_VideoFeedErrCode                    ErrCode = 50019
+	ErrCode_VideoIsNotExistErrCode              ErrCode = 50020
+	ErrCode_UpdateVideoCountFailedErrCode       ErrCode = 50021
+	ErrCode_CommentActionErrCode                ErrCode = 60022
+	ErrCode_CommentIsNotExistErrCode            ErrCode = 60023
+	ErrCode_CommentAddFailedErrCode             ErrCode = 60024
+)
+
+func (p ErrCode) String() string {
+	switch p {
+	case ErrCode_SuccessCode:
+		return "SuccessCode"
+	case ErrCode_ServiceErrCode:
+		return "ServiceErrCode"
+	case ErrCode_ParamErrCode:
+		return "ParamErrCode"
+	case ErrCode_MysqlErrCode:
+		return "MysqlErrCode"
+	case ErrCode_RedisErrCode:
+		return "RedisErrCode"
+	case ErrCode_UserIsNotExistErrCode:
+		return "UserIsNotExistErrCode"
+	case ErrCode_PasswordIsNotVerifiedCode:
+		return "PasswordIsNotVerifiedCode"
+	case ErrCode_AuthorizationFailedErrCode:
+		return "AuthorizationFailedErrCode"
+	case ErrCode_UserAlreadyExistErrCode:
+		return "UserAlreadyExistErrCode"
+	case ErrCode_UpdateUserCountFailedErrCode:
+		return "UpdateUserCountFailedErrCode"
+	case ErrCode_FollowRelationAlreadyExistErrCode:
+		return "FollowRelationAlreadyExistErrCode"
+	case ErrCode_FollowRelationNotExistErrCode:
+		return "FollowRelationNotExistErrCode"
+	case ErrCode_FavoriteActionErrCode:
+		return "FavoriteActionErrCode"
+	case ErrCode_FavoriteAddFailedCode:
+		return "FavoriteAddFailedCode"
+	case ErrCode_FavoriteRelationAlreadyExistErrCode:
+		return "FavoriteRelationAlreadyExistErrCode"
+	case ErrCode_FavoriteRelationNotExistErrCode:
+		return "FavoriteRelationNotExistErrCode"
+	case ErrCode_ChatActionErrCode:
+		return "ChatActionErrCode"
+	case ErrCode_MessageAddFailedErrCode:
+		return "MessageAddFailedErrCode"
+	case ErrCode_FriendListNoPermissionErrCode:
+		return "FriendListNoPermissionErrCode"
+	case ErrCode_VideoFeedErrCode:
+		return "VideoFeedErrCode"
+	case ErrCode_VideoIsNotExistErrCode:
+		return "VideoIsNotExistErrCode"
+	case ErrCode_UpdateVideoCountFailedErrCode:
+		return "UpdateVideoCountFailedErrCode"
+	case ErrCode_CommentActionErrCode:
+		return "CommentActionErrCode"
+	case ErrCode_CommentIsNotExistErrCode:
+		return "CommentIsNotExistErrCode"
+	case ErrCode_CommentAddFailedErrCode:
+		return "CommentAddFailedErrCode"
+	}
+	return "<UNSET>"
+}
+
+func ErrCodeFromString(s string) (ErrCode, error) {
+	switch s {
+	case "SuccessCode":
+		return ErrCode_SuccessCode, nil
+	case "ServiceErrCode":
+		return ErrCode_ServiceErrCode, nil
+	case "ParamErrCode":
+		return ErrCode_ParamErrCode, nil
+	case "MysqlErrCode":
+		return ErrCode_MysqlErrCode, nil
+	case "RedisErrCode":
+		return ErrCode_RedisErrCode, nil
+	case "UserIsNotExistErrCode":
+		return ErrCode_UserIsNotExistErrCode, nil
+	case "PasswordIsNotVerifiedCode":
+		return ErrCode_PasswordIsNotVerifiedCode, nil
+	case "AuthorizationFailedErrCode":
+		return ErrCode_AuthorizationFailedErrCode, nil
+	case "UserAlreadyExistErrCode":
+		return ErrCode_UserAlreadyExistErrCode, nil
+	case "UpdateUserCountFailedErrCode":
+		return ErrCode_UpdateUserCountFailedErrCode, nil
+	case "FollowRelationAlreadyExistErrCode":
+		return ErrCode_FollowRelationAlreadyExistErrCode, nil
+	case "FollowRelationNotExistErrCode":
+		return ErrCode_FollowRelationNotExistErrCode, nil
+	case "FavoriteActionErrCode":
+		return ErrCode_FavoriteActionErrCode, nil
+	case "FavoriteAddFailedCode":
+		return ErrCode_FavoriteAddFailedCode, nil
+	case "FavoriteRelationAlreadyExistErrCode":
+		return ErrCode_FavoriteRelationAlreadyExistErrCode, nil
+	case "FavoriteRelationNotExistErrCode":
+		return ErrCode_FavoriteRelationNotExistErrCode, nil
+	case "ChatActionErrCode":
+		return ErrCode_ChatActionErrCode, nil
+	case "MessageAddFailedErrCode":
+		return ErrCode_MessageAddFailedErrCode, nil
+	case "FriendListNoPermissionErrCode":
+		return ErrCode_FriendListNoPermissionErrCode, nil
+	case "VideoFeedErrCode":
+		return ErrCode_VideoFeedErrCode, nil
+	case "VideoIsNotExistErrCode":
+		return ErrCode_VideoIsNotExistErrCode, nil
+	case "UpdateVideoCountFailedErrCode":
+		return ErrCode_UpdateVideoCountFailedErrCode, nil
+	case "CommentActionErrCode":
+		return ErrCode_CommentActionErrCode, nil
+	case "CommentIsNotExistErrCode":
+		return ErrCode_CommentIsNotExistErrCode, nil
+	case "CommentAddFailedErrCode":
+		return ErrCode_CommentAddFailedErrCode, nil
+	}
+	return ErrCode(0), fmt.Errorf("not a valid ErrCode string")
+}
+
+func ErrCodePtr(v ErrCode) *ErrCode { return &v }
+func (p *ErrCode) Scan(value interface{}) (err error) {
+	var result sql.NullInt64
+	err = result.Scan(value)
+	*p = ErrCode(result.Int64)
+	return
+}
+
+func (p *ErrCode) Value() (driver.Value, error) {
+	if p == nil {
+		return nil, nil
+	}
+	return int64(*p), nil
+}
+
+type BaseResp struct {
+	StatusCode int64  `thrift:"status_code,1" frugal:"1,default,i64" json:"status_code"`
+	StatusMsg  string `thrift:"status_msg,2" frugal:"2,default,string" json:"status_msg"`
+}
+
+func NewBaseResp() *BaseResp {
+	return &BaseResp{}
+}
+
+func (p *BaseResp) InitDefault() {
+	*p = BaseResp{}
+}
+
+func (p *BaseResp) GetStatusCode() (v int64) {
+	return p.StatusCode
+}
+
+func (p *BaseResp) GetStatusMsg() (v string) {
+	return p.StatusMsg
+}
+func (p *BaseResp) SetStatusCode(val int64) {
+	p.StatusCode = val
+}
+func (p *BaseResp) SetStatusMsg(val string) {
+	p.StatusMsg = val
+}
+
+var fieldIDToName_BaseResp = map[int16]string{
+	1: "status_code",
+	2: "status_msg",
+}
+
+func (p *BaseResp) Read(iprot thrift.TProtocol) (err error) {
+
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.I64 {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else {
+				if err = iprot.Skip(fieldTypeId); err != nil {
+					goto SkipFieldError
+				}
+			}
+		case 2:
+			if fieldTypeId == thrift.STRING {
+				if err = p.ReadField2(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else {
+				if err = iprot.Skip(fieldTypeId); err != nil {
+					goto SkipFieldError
+				}
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_BaseResp[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *BaseResp) ReadField1(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadI64(); err != nil {
+		return err
+	} else {
+		p.StatusCode = v
+	}
+	return nil
+}
+
+func (p *BaseResp) ReadField2(iprot thrift.TProtocol) error {
+	if v, err := iprot.ReadString(); err != nil {
+		return err
+	} else {
+		p.StatusMsg = v
+	}
+	return nil
+}
+
+func (p *BaseResp) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("BaseResp"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+		if err = p.writeField2(oprot); err != nil {
+			fieldId = 2
+			goto WriteFieldError
+		}
+
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *BaseResp) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteI64(p.StatusCode); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *BaseResp) writeField2(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("status_msg", thrift.STRING, 2); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteString(p.StatusMsg); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
+}
+
+func (p *BaseResp) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("BaseResp(%+v)", *p)
+}
+
+func (p *BaseResp) DeepEqual(ano *BaseResp) bool {
+	if p == ano {
+		return true
+	} else if p == nil || ano == nil {
+		return false
+	}
+	if !p.Field1DeepEqual(ano.StatusCode) {
+		return false
+	}
+	if !p.Field2DeepEqual(ano.StatusMsg) {
+		return false
+	}
+	return true
+}
+
+func (p *BaseResp) Field1DeepEqual(src int64) bool {
+
+	if p.StatusCode != src {
+		return false
+	}
+	return true
+}
+func (p *BaseResp) Field2DeepEqual(src string) bool {
+
+	if strings.Compare(p.StatusMsg, src) != 0 {
+		return false
+	}
+	return true
+}
 
 type VideoFeedRequest struct {
 	LatestTime *int64  `thrift:"latest_time,1,optional" frugal:"1,optional,i64" json:"latest_time,omitempty"`
@@ -326,10 +708,9 @@ func (p *VideoFeedRequest) Field3DeepEqual(src int64) bool {
 }
 
 type VideoFeedResponse struct {
-	StatusCode int64    `thrift:"status_code,1" frugal:"1,default,i64" json:"status_code"`
-	StatusMsg  string   `thrift:"status_msg,2" frugal:"2,default,string" json:"status_msg"`
-	VideoList  []*Video `thrift:"video_list,3" frugal:"3,default,list<Video>" json:"video_list"`
-	NextTime   *int64   `thrift:"next_time,4,optional" frugal:"4,optional,i64" json:"next_time,omitempty"`
+	BaseResp  *BaseResp `thrift:"base_resp,1" frugal:"1,default,BaseResp" json:"base_resp"`
+	VideoList []*Video  `thrift:"video_list,2" frugal:"2,default,list<Video>" json:"video_list"`
+	NextTime  *int64    `thrift:"next_time,3,optional" frugal:"3,optional,i64" json:"next_time,omitempty"`
 }
 
 func NewVideoFeedResponse() *VideoFeedResponse {
@@ -340,12 +721,13 @@ func (p *VideoFeedResponse) InitDefault() {
 	*p = VideoFeedResponse{}
 }
 
-func (p *VideoFeedResponse) GetStatusCode() (v int64) {
-	return p.StatusCode
-}
+var VideoFeedResponse_BaseResp_DEFAULT *BaseResp
 
-func (p *VideoFeedResponse) GetStatusMsg() (v string) {
-	return p.StatusMsg
+func (p *VideoFeedResponse) GetBaseResp() (v *BaseResp) {
+	if !p.IsSetBaseResp() {
+		return VideoFeedResponse_BaseResp_DEFAULT
+	}
+	return p.BaseResp
 }
 
 func (p *VideoFeedResponse) GetVideoList() (v []*Video) {
@@ -360,11 +742,8 @@ func (p *VideoFeedResponse) GetNextTime() (v int64) {
 	}
 	return *p.NextTime
 }
-func (p *VideoFeedResponse) SetStatusCode(val int64) {
-	p.StatusCode = val
-}
-func (p *VideoFeedResponse) SetStatusMsg(val string) {
-	p.StatusMsg = val
+func (p *VideoFeedResponse) SetBaseResp(val *BaseResp) {
+	p.BaseResp = val
 }
 func (p *VideoFeedResponse) SetVideoList(val []*Video) {
 	p.VideoList = val
@@ -374,10 +753,13 @@ func (p *VideoFeedResponse) SetNextTime(val *int64) {
 }
 
 var fieldIDToName_VideoFeedResponse = map[int16]string{
-	1: "status_code",
-	2: "status_msg",
-	3: "video_list",
-	4: "next_time",
+	1: "base_resp",
+	2: "video_list",
+	3: "next_time",
+}
+
+func (p *VideoFeedResponse) IsSetBaseResp() bool {
+	return p.BaseResp != nil
 }
 
 func (p *VideoFeedResponse) IsSetNextTime() bool {
@@ -404,7 +786,7 @@ func (p *VideoFeedResponse) Read(iprot thrift.TProtocol) (err error) {
 
 		switch fieldId {
 		case 1:
-			if fieldTypeId == thrift.I64 {
+			if fieldTypeId == thrift.STRUCT {
 				if err = p.ReadField1(iprot); err != nil {
 					goto ReadFieldError
 				}
@@ -414,7 +796,7 @@ func (p *VideoFeedResponse) Read(iprot thrift.TProtocol) (err error) {
 				}
 			}
 		case 2:
-			if fieldTypeId == thrift.STRING {
+			if fieldTypeId == thrift.LIST {
 				if err = p.ReadField2(iprot); err != nil {
 					goto ReadFieldError
 				}
@@ -424,18 +806,8 @@ func (p *VideoFeedResponse) Read(iprot thrift.TProtocol) (err error) {
 				}
 			}
 		case 3:
-			if fieldTypeId == thrift.LIST {
-				if err = p.ReadField3(iprot); err != nil {
-					goto ReadFieldError
-				}
-			} else {
-				if err = iprot.Skip(fieldTypeId); err != nil {
-					goto SkipFieldError
-				}
-			}
-		case 4:
 			if fieldTypeId == thrift.I64 {
-				if err = p.ReadField4(iprot); err != nil {
+				if err = p.ReadField3(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else {
@@ -474,24 +846,14 @@ ReadStructEndError:
 }
 
 func (p *VideoFeedResponse) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI64(); err != nil {
+	p.BaseResp = NewBaseResp()
+	if err := p.BaseResp.Read(iprot); err != nil {
 		return err
-	} else {
-		p.StatusCode = v
 	}
 	return nil
 }
 
 func (p *VideoFeedResponse) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadString(); err != nil {
-		return err
-	} else {
-		p.StatusMsg = v
-	}
-	return nil
-}
-
-func (p *VideoFeedResponse) ReadField3(iprot thrift.TProtocol) error {
 	_, size, err := iprot.ReadListBegin()
 	if err != nil {
 		return err
@@ -511,7 +873,7 @@ func (p *VideoFeedResponse) ReadField3(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *VideoFeedResponse) ReadField4(iprot thrift.TProtocol) error {
+func (p *VideoFeedResponse) ReadField3(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadI64(); err != nil {
 		return err
 	} else {
@@ -538,10 +900,6 @@ func (p *VideoFeedResponse) Write(oprot thrift.TProtocol) (err error) {
 			fieldId = 3
 			goto WriteFieldError
 		}
-		if err = p.writeField4(oprot); err != nil {
-			fieldId = 4
-			goto WriteFieldError
-		}
 
 	}
 	if err = oprot.WriteFieldStop(); err != nil {
@@ -562,10 +920,10 @@ WriteStructEndError:
 }
 
 func (p *VideoFeedResponse) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
+	if err = oprot.WriteFieldBegin("base_resp", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI64(p.StatusCode); err != nil {
+	if err := p.BaseResp.Write(oprot); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -579,24 +937,7 @@ WriteFieldEndError:
 }
 
 func (p *VideoFeedResponse) writeField2(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_msg", thrift.STRING, 2); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := oprot.WriteString(p.StatusMsg); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
-	}
-	return nil
-WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
-WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
-}
-
-func (p *VideoFeedResponse) writeField3(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("video_list", thrift.LIST, 3); err != nil {
+	if err = oprot.WriteFieldBegin("video_list", thrift.LIST, 2); err != nil {
 		goto WriteFieldBeginError
 	}
 	if err := oprot.WriteListBegin(thrift.STRUCT, len(p.VideoList)); err != nil {
@@ -615,14 +956,14 @@ func (p *VideoFeedResponse) writeField3(oprot thrift.TProtocol) (err error) {
 	}
 	return nil
 WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 3 begin error: ", p), err)
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
 WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 3 end error: ", p), err)
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
 }
 
-func (p *VideoFeedResponse) writeField4(oprot thrift.TProtocol) (err error) {
+func (p *VideoFeedResponse) writeField3(oprot thrift.TProtocol) (err error) {
 	if p.IsSetNextTime() {
-		if err = oprot.WriteFieldBegin("next_time", thrift.I64, 4); err != nil {
+		if err = oprot.WriteFieldBegin("next_time", thrift.I64, 3); err != nil {
 			goto WriteFieldBeginError
 		}
 		if err := oprot.WriteI64(*p.NextTime); err != nil {
@@ -634,9 +975,9 @@ func (p *VideoFeedResponse) writeField4(oprot thrift.TProtocol) (err error) {
 	}
 	return nil
 WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 4 begin error: ", p), err)
+	return thrift.PrependError(fmt.Sprintf("%T write field 3 begin error: ", p), err)
 WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 4 end error: ", p), err)
+	return thrift.PrependError(fmt.Sprintf("%T write field 3 end error: ", p), err)
 }
 
 func (p *VideoFeedResponse) String() string {
@@ -652,36 +993,26 @@ func (p *VideoFeedResponse) DeepEqual(ano *VideoFeedResponse) bool {
 	} else if p == nil || ano == nil {
 		return false
 	}
-	if !p.Field1DeepEqual(ano.StatusCode) {
+	if !p.Field1DeepEqual(ano.BaseResp) {
 		return false
 	}
-	if !p.Field2DeepEqual(ano.StatusMsg) {
+	if !p.Field2DeepEqual(ano.VideoList) {
 		return false
 	}
-	if !p.Field3DeepEqual(ano.VideoList) {
-		return false
-	}
-	if !p.Field4DeepEqual(ano.NextTime) {
+	if !p.Field3DeepEqual(ano.NextTime) {
 		return false
 	}
 	return true
 }
 
-func (p *VideoFeedResponse) Field1DeepEqual(src int64) bool {
+func (p *VideoFeedResponse) Field1DeepEqual(src *BaseResp) bool {
 
-	if p.StatusCode != src {
+	if !p.BaseResp.DeepEqual(src) {
 		return false
 	}
 	return true
 }
-func (p *VideoFeedResponse) Field2DeepEqual(src string) bool {
-
-	if strings.Compare(p.StatusMsg, src) != 0 {
-		return false
-	}
-	return true
-}
-func (p *VideoFeedResponse) Field3DeepEqual(src []*Video) bool {
+func (p *VideoFeedResponse) Field2DeepEqual(src []*Video) bool {
 
 	if len(p.VideoList) != len(src) {
 		return false
@@ -694,7 +1025,7 @@ func (p *VideoFeedResponse) Field3DeepEqual(src []*Video) bool {
 	}
 	return true
 }
-func (p *VideoFeedResponse) Field4DeepEqual(src *int64) bool {
+func (p *VideoFeedResponse) Field3DeepEqual(src *int64) bool {
 
 	if p.NextTime == src {
 		return true
@@ -1575,8 +1906,7 @@ func (p *VideoPublishRequest) Field3DeepEqual(src string) bool {
 }
 
 type VideoPublishResponse struct {
-	StatusCode int64  `thrift:"status_code,1" frugal:"1,default,i64" json:"status_code"`
-	StatusMsg  string `thrift:"status_msg,2" frugal:"2,default,string" json:"status_msg"`
+	BaseResp *BaseResp `thrift:"base_resp,1" frugal:"1,default,BaseResp" json:"base_resp"`
 }
 
 func NewVideoPublishResponse() *VideoPublishResponse {
@@ -1587,23 +1917,24 @@ func (p *VideoPublishResponse) InitDefault() {
 	*p = VideoPublishResponse{}
 }
 
-func (p *VideoPublishResponse) GetStatusCode() (v int64) {
-	return p.StatusCode
-}
+var VideoPublishResponse_BaseResp_DEFAULT *BaseResp
 
-func (p *VideoPublishResponse) GetStatusMsg() (v string) {
-	return p.StatusMsg
+func (p *VideoPublishResponse) GetBaseResp() (v *BaseResp) {
+	if !p.IsSetBaseResp() {
+		return VideoPublishResponse_BaseResp_DEFAULT
+	}
+	return p.BaseResp
 }
-func (p *VideoPublishResponse) SetStatusCode(val int64) {
-	p.StatusCode = val
-}
-func (p *VideoPublishResponse) SetStatusMsg(val string) {
-	p.StatusMsg = val
+func (p *VideoPublishResponse) SetBaseResp(val *BaseResp) {
+	p.BaseResp = val
 }
 
 var fieldIDToName_VideoPublishResponse = map[int16]string{
-	1: "status_code",
-	2: "status_msg",
+	1: "base_resp",
+}
+
+func (p *VideoPublishResponse) IsSetBaseResp() bool {
+	return p.BaseResp != nil
 }
 
 func (p *VideoPublishResponse) Read(iprot thrift.TProtocol) (err error) {
@@ -1626,18 +1957,8 @@ func (p *VideoPublishResponse) Read(iprot thrift.TProtocol) (err error) {
 
 		switch fieldId {
 		case 1:
-			if fieldTypeId == thrift.I64 {
+			if fieldTypeId == thrift.STRUCT {
 				if err = p.ReadField1(iprot); err != nil {
-					goto ReadFieldError
-				}
-			} else {
-				if err = iprot.Skip(fieldTypeId); err != nil {
-					goto SkipFieldError
-				}
-			}
-		case 2:
-			if fieldTypeId == thrift.STRING {
-				if err = p.ReadField2(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else {
@@ -1676,19 +1997,9 @@ ReadStructEndError:
 }
 
 func (p *VideoPublishResponse) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI64(); err != nil {
+	p.BaseResp = NewBaseResp()
+	if err := p.BaseResp.Read(iprot); err != nil {
 		return err
-	} else {
-		p.StatusCode = v
-	}
-	return nil
-}
-
-func (p *VideoPublishResponse) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadString(); err != nil {
-		return err
-	} else {
-		p.StatusMsg = v
 	}
 	return nil
 }
@@ -1701,10 +2012,6 @@ func (p *VideoPublishResponse) Write(oprot thrift.TProtocol) (err error) {
 	if p != nil {
 		if err = p.writeField1(oprot); err != nil {
 			fieldId = 1
-			goto WriteFieldError
-		}
-		if err = p.writeField2(oprot); err != nil {
-			fieldId = 2
 			goto WriteFieldError
 		}
 
@@ -1727,10 +2034,10 @@ WriteStructEndError:
 }
 
 func (p *VideoPublishResponse) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
+	if err = oprot.WriteFieldBegin("base_resp", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI64(p.StatusCode); err != nil {
+	if err := p.BaseResp.Write(oprot); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -1741,23 +2048,6 @@ WriteFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
 WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
-}
-
-func (p *VideoPublishResponse) writeField2(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_msg", thrift.STRING, 2); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := oprot.WriteString(p.StatusMsg); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
-	}
-	return nil
-WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
-WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
 }
 
 func (p *VideoPublishResponse) String() string {
@@ -1773,25 +2063,15 @@ func (p *VideoPublishResponse) DeepEqual(ano *VideoPublishResponse) bool {
 	} else if p == nil || ano == nil {
 		return false
 	}
-	if !p.Field1DeepEqual(ano.StatusCode) {
-		return false
-	}
-	if !p.Field2DeepEqual(ano.StatusMsg) {
+	if !p.Field1DeepEqual(ano.BaseResp) {
 		return false
 	}
 	return true
 }
 
-func (p *VideoPublishResponse) Field1DeepEqual(src int64) bool {
+func (p *VideoPublishResponse) Field1DeepEqual(src *BaseResp) bool {
 
-	if p.StatusCode != src {
-		return false
-	}
-	return true
-}
-func (p *VideoPublishResponse) Field2DeepEqual(src string) bool {
-
-	if strings.Compare(p.StatusMsg, src) != 0 {
+	if !p.BaseResp.DeepEqual(src) {
 		return false
 	}
 	return true
@@ -2021,9 +2301,8 @@ func (p *PublishListRequest) Field2DeepEqual(src int64) bool {
 }
 
 type PublishListResponse struct {
-	StatusCode int64    `thrift:"status_code,1" frugal:"1,default,i64" json:"status_code"`
-	StatusMsg  string   `thrift:"status_msg,2" frugal:"2,default,string" json:"status_msg"`
-	VideoList  []*Video `thrift:"video_list,3" frugal:"3,default,list<Video>" json:"video_list"`
+	BaseResp  *BaseResp `thrift:"base_resp,1" frugal:"1,default,BaseResp" json:"base_resp"`
+	VideoList []*Video  `thrift:"video_list,2" frugal:"2,default,list<Video>" json:"video_list"`
 }
 
 func NewPublishListResponse() *PublishListResponse {
@@ -2034,31 +2313,32 @@ func (p *PublishListResponse) InitDefault() {
 	*p = PublishListResponse{}
 }
 
-func (p *PublishListResponse) GetStatusCode() (v int64) {
-	return p.StatusCode
-}
+var PublishListResponse_BaseResp_DEFAULT *BaseResp
 
-func (p *PublishListResponse) GetStatusMsg() (v string) {
-	return p.StatusMsg
+func (p *PublishListResponse) GetBaseResp() (v *BaseResp) {
+	if !p.IsSetBaseResp() {
+		return PublishListResponse_BaseResp_DEFAULT
+	}
+	return p.BaseResp
 }
 
 func (p *PublishListResponse) GetVideoList() (v []*Video) {
 	return p.VideoList
 }
-func (p *PublishListResponse) SetStatusCode(val int64) {
-	p.StatusCode = val
-}
-func (p *PublishListResponse) SetStatusMsg(val string) {
-	p.StatusMsg = val
+func (p *PublishListResponse) SetBaseResp(val *BaseResp) {
+	p.BaseResp = val
 }
 func (p *PublishListResponse) SetVideoList(val []*Video) {
 	p.VideoList = val
 }
 
 var fieldIDToName_PublishListResponse = map[int16]string{
-	1: "status_code",
-	2: "status_msg",
-	3: "video_list",
+	1: "base_resp",
+	2: "video_list",
+}
+
+func (p *PublishListResponse) IsSetBaseResp() bool {
+	return p.BaseResp != nil
 }
 
 func (p *PublishListResponse) Read(iprot thrift.TProtocol) (err error) {
@@ -2081,7 +2361,7 @@ func (p *PublishListResponse) Read(iprot thrift.TProtocol) (err error) {
 
 		switch fieldId {
 		case 1:
-			if fieldTypeId == thrift.I64 {
+			if fieldTypeId == thrift.STRUCT {
 				if err = p.ReadField1(iprot); err != nil {
 					goto ReadFieldError
 				}
@@ -2091,18 +2371,8 @@ func (p *PublishListResponse) Read(iprot thrift.TProtocol) (err error) {
 				}
 			}
 		case 2:
-			if fieldTypeId == thrift.STRING {
-				if err = p.ReadField2(iprot); err != nil {
-					goto ReadFieldError
-				}
-			} else {
-				if err = iprot.Skip(fieldTypeId); err != nil {
-					goto SkipFieldError
-				}
-			}
-		case 3:
 			if fieldTypeId == thrift.LIST {
-				if err = p.ReadField3(iprot); err != nil {
+				if err = p.ReadField2(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else {
@@ -2141,24 +2411,14 @@ ReadStructEndError:
 }
 
 func (p *PublishListResponse) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI64(); err != nil {
+	p.BaseResp = NewBaseResp()
+	if err := p.BaseResp.Read(iprot); err != nil {
 		return err
-	} else {
-		p.StatusCode = v
 	}
 	return nil
 }
 
 func (p *PublishListResponse) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadString(); err != nil {
-		return err
-	} else {
-		p.StatusMsg = v
-	}
-	return nil
-}
-
-func (p *PublishListResponse) ReadField3(iprot thrift.TProtocol) error {
 	_, size, err := iprot.ReadListBegin()
 	if err != nil {
 		return err
@@ -2192,10 +2452,6 @@ func (p *PublishListResponse) Write(oprot thrift.TProtocol) (err error) {
 			fieldId = 2
 			goto WriteFieldError
 		}
-		if err = p.writeField3(oprot); err != nil {
-			fieldId = 3
-			goto WriteFieldError
-		}
 
 	}
 	if err = oprot.WriteFieldStop(); err != nil {
@@ -2216,10 +2472,10 @@ WriteStructEndError:
 }
 
 func (p *PublishListResponse) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
+	if err = oprot.WriteFieldBegin("base_resp", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI64(p.StatusCode); err != nil {
+	if err := p.BaseResp.Write(oprot); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -2233,24 +2489,7 @@ WriteFieldEndError:
 }
 
 func (p *PublishListResponse) writeField2(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_msg", thrift.STRING, 2); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := oprot.WriteString(p.StatusMsg); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
-	}
-	return nil
-WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
-WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
-}
-
-func (p *PublishListResponse) writeField3(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("video_list", thrift.LIST, 3); err != nil {
+	if err = oprot.WriteFieldBegin("video_list", thrift.LIST, 2); err != nil {
 		goto WriteFieldBeginError
 	}
 	if err := oprot.WriteListBegin(thrift.STRUCT, len(p.VideoList)); err != nil {
@@ -2269,9 +2508,9 @@ func (p *PublishListResponse) writeField3(oprot thrift.TProtocol) (err error) {
 	}
 	return nil
 WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 3 begin error: ", p), err)
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
 WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 3 end error: ", p), err)
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
 }
 
 func (p *PublishListResponse) String() string {
@@ -2287,33 +2526,23 @@ func (p *PublishListResponse) DeepEqual(ano *PublishListResponse) bool {
 	} else if p == nil || ano == nil {
 		return false
 	}
-	if !p.Field1DeepEqual(ano.StatusCode) {
+	if !p.Field1DeepEqual(ano.BaseResp) {
 		return false
 	}
-	if !p.Field2DeepEqual(ano.StatusMsg) {
-		return false
-	}
-	if !p.Field3DeepEqual(ano.VideoList) {
+	if !p.Field2DeepEqual(ano.VideoList) {
 		return false
 	}
 	return true
 }
 
-func (p *PublishListResponse) Field1DeepEqual(src int64) bool {
+func (p *PublishListResponse) Field1DeepEqual(src *BaseResp) bool {
 
-	if p.StatusCode != src {
+	if !p.BaseResp.DeepEqual(src) {
 		return false
 	}
 	return true
 }
-func (p *PublishListResponse) Field2DeepEqual(src string) bool {
-
-	if strings.Compare(p.StatusMsg, src) != 0 {
-		return false
-	}
-	return true
-}
-func (p *PublishListResponse) Field3DeepEqual(src []*Video) bool {
+func (p *PublishListResponse) Field2DeepEqual(src []*Video) bool {
 
 	if len(p.VideoList) != len(src) {
 		return false
@@ -2551,9 +2780,8 @@ func (p *GetVideoInfoRequest) Field2DeepEqual(src int64) bool {
 }
 
 type GetVideoInfoResponse struct {
-	StatusCode int64  `thrift:"status_code,1" frugal:"1,default,i64" json:"status_code"`
-	StatusMsg  string `thrift:"status_msg,2" frugal:"2,default,string" json:"status_msg"`
-	VideoInfo  *Video `thrift:"video_info,3" frugal:"3,default,Video" json:"video_info"`
+	BaseResp  *BaseResp `thrift:"base_resp,1" frugal:"1,default,BaseResp" json:"base_resp"`
+	VideoInfo *Video    `thrift:"video_info,2" frugal:"2,default,Video" json:"video_info"`
 }
 
 func NewGetVideoInfoResponse() *GetVideoInfoResponse {
@@ -2564,12 +2792,13 @@ func (p *GetVideoInfoResponse) InitDefault() {
 	*p = GetVideoInfoResponse{}
 }
 
-func (p *GetVideoInfoResponse) GetStatusCode() (v int64) {
-	return p.StatusCode
-}
+var GetVideoInfoResponse_BaseResp_DEFAULT *BaseResp
 
-func (p *GetVideoInfoResponse) GetStatusMsg() (v string) {
-	return p.StatusMsg
+func (p *GetVideoInfoResponse) GetBaseResp() (v *BaseResp) {
+	if !p.IsSetBaseResp() {
+		return GetVideoInfoResponse_BaseResp_DEFAULT
+	}
+	return p.BaseResp
 }
 
 var GetVideoInfoResponse_VideoInfo_DEFAULT *Video
@@ -2580,20 +2809,20 @@ func (p *GetVideoInfoResponse) GetVideoInfo() (v *Video) {
 	}
 	return p.VideoInfo
 }
-func (p *GetVideoInfoResponse) SetStatusCode(val int64) {
-	p.StatusCode = val
-}
-func (p *GetVideoInfoResponse) SetStatusMsg(val string) {
-	p.StatusMsg = val
+func (p *GetVideoInfoResponse) SetBaseResp(val *BaseResp) {
+	p.BaseResp = val
 }
 func (p *GetVideoInfoResponse) SetVideoInfo(val *Video) {
 	p.VideoInfo = val
 }
 
 var fieldIDToName_GetVideoInfoResponse = map[int16]string{
-	1: "status_code",
-	2: "status_msg",
-	3: "video_info",
+	1: "base_resp",
+	2: "video_info",
+}
+
+func (p *GetVideoInfoResponse) IsSetBaseResp() bool {
+	return p.BaseResp != nil
 }
 
 func (p *GetVideoInfoResponse) IsSetVideoInfo() bool {
@@ -2620,7 +2849,7 @@ func (p *GetVideoInfoResponse) Read(iprot thrift.TProtocol) (err error) {
 
 		switch fieldId {
 		case 1:
-			if fieldTypeId == thrift.I64 {
+			if fieldTypeId == thrift.STRUCT {
 				if err = p.ReadField1(iprot); err != nil {
 					goto ReadFieldError
 				}
@@ -2630,18 +2859,8 @@ func (p *GetVideoInfoResponse) Read(iprot thrift.TProtocol) (err error) {
 				}
 			}
 		case 2:
-			if fieldTypeId == thrift.STRING {
-				if err = p.ReadField2(iprot); err != nil {
-					goto ReadFieldError
-				}
-			} else {
-				if err = iprot.Skip(fieldTypeId); err != nil {
-					goto SkipFieldError
-				}
-			}
-		case 3:
 			if fieldTypeId == thrift.STRUCT {
-				if err = p.ReadField3(iprot); err != nil {
+				if err = p.ReadField2(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else {
@@ -2680,24 +2899,14 @@ ReadStructEndError:
 }
 
 func (p *GetVideoInfoResponse) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI64(); err != nil {
+	p.BaseResp = NewBaseResp()
+	if err := p.BaseResp.Read(iprot); err != nil {
 		return err
-	} else {
-		p.StatusCode = v
 	}
 	return nil
 }
 
 func (p *GetVideoInfoResponse) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadString(); err != nil {
-		return err
-	} else {
-		p.StatusMsg = v
-	}
-	return nil
-}
-
-func (p *GetVideoInfoResponse) ReadField3(iprot thrift.TProtocol) error {
 	p.VideoInfo = NewVideo()
 	if err := p.VideoInfo.Read(iprot); err != nil {
 		return err
@@ -2717,10 +2926,6 @@ func (p *GetVideoInfoResponse) Write(oprot thrift.TProtocol) (err error) {
 		}
 		if err = p.writeField2(oprot); err != nil {
 			fieldId = 2
-			goto WriteFieldError
-		}
-		if err = p.writeField3(oprot); err != nil {
-			fieldId = 3
 			goto WriteFieldError
 		}
 
@@ -2743,10 +2948,10 @@ WriteStructEndError:
 }
 
 func (p *GetVideoInfoResponse) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
+	if err = oprot.WriteFieldBegin("base_resp", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI64(p.StatusCode); err != nil {
+	if err := p.BaseResp.Write(oprot); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -2760,24 +2965,7 @@ WriteFieldEndError:
 }
 
 func (p *GetVideoInfoResponse) writeField2(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_msg", thrift.STRING, 2); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := oprot.WriteString(p.StatusMsg); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
-	}
-	return nil
-WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
-WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
-}
-
-func (p *GetVideoInfoResponse) writeField3(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("video_info", thrift.STRUCT, 3); err != nil {
+	if err = oprot.WriteFieldBegin("video_info", thrift.STRUCT, 2); err != nil {
 		goto WriteFieldBeginError
 	}
 	if err := p.VideoInfo.Write(oprot); err != nil {
@@ -2788,9 +2976,9 @@ func (p *GetVideoInfoResponse) writeField3(oprot thrift.TProtocol) (err error) {
 	}
 	return nil
 WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 3 begin error: ", p), err)
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
 WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 3 end error: ", p), err)
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
 }
 
 func (p *GetVideoInfoResponse) String() string {
@@ -2806,33 +2994,23 @@ func (p *GetVideoInfoResponse) DeepEqual(ano *GetVideoInfoResponse) bool {
 	} else if p == nil || ano == nil {
 		return false
 	}
-	if !p.Field1DeepEqual(ano.StatusCode) {
+	if !p.Field1DeepEqual(ano.BaseResp) {
 		return false
 	}
-	if !p.Field2DeepEqual(ano.StatusMsg) {
-		return false
-	}
-	if !p.Field3DeepEqual(ano.VideoInfo) {
+	if !p.Field2DeepEqual(ano.VideoInfo) {
 		return false
 	}
 	return true
 }
 
-func (p *GetVideoInfoResponse) Field1DeepEqual(src int64) bool {
+func (p *GetVideoInfoResponse) Field1DeepEqual(src *BaseResp) bool {
 
-	if p.StatusCode != src {
+	if !p.BaseResp.DeepEqual(src) {
 		return false
 	}
 	return true
 }
-func (p *GetVideoInfoResponse) Field2DeepEqual(src string) bool {
-
-	if strings.Compare(p.StatusMsg, src) != 0 {
-		return false
-	}
-	return true
-}
-func (p *GetVideoInfoResponse) Field3DeepEqual(src *Video) bool {
+func (p *GetVideoInfoResponse) Field2DeepEqual(src *Video) bool {
 
 	if !p.VideoInfo.DeepEqual(src) {
 		return false
@@ -3091,9 +3269,8 @@ func (p *GetManyVideoInfosRequest) Field2DeepEqual(src []int64) bool {
 }
 
 type GetManyVideoInfosResponse struct {
-	StatusCode int64    `thrift:"status_code,1" frugal:"1,default,i64" json:"status_code"`
-	StatusMsg  string   `thrift:"status_msg,2" frugal:"2,default,string" json:"status_msg"`
-	VideoInfos []*Video `thrift:"video_infos,3" frugal:"3,default,list<Video>" json:"video_infos"`
+	BaseResp   *BaseResp `thrift:"base_resp,1" frugal:"1,default,BaseResp" json:"base_resp"`
+	VideoInfos []*Video  `thrift:"video_infos,2" frugal:"2,default,list<Video>" json:"video_infos"`
 }
 
 func NewGetManyVideoInfosResponse() *GetManyVideoInfosResponse {
@@ -3104,31 +3281,32 @@ func (p *GetManyVideoInfosResponse) InitDefault() {
 	*p = GetManyVideoInfosResponse{}
 }
 
-func (p *GetManyVideoInfosResponse) GetStatusCode() (v int64) {
-	return p.StatusCode
-}
+var GetManyVideoInfosResponse_BaseResp_DEFAULT *BaseResp
 
-func (p *GetManyVideoInfosResponse) GetStatusMsg() (v string) {
-	return p.StatusMsg
+func (p *GetManyVideoInfosResponse) GetBaseResp() (v *BaseResp) {
+	if !p.IsSetBaseResp() {
+		return GetManyVideoInfosResponse_BaseResp_DEFAULT
+	}
+	return p.BaseResp
 }
 
 func (p *GetManyVideoInfosResponse) GetVideoInfos() (v []*Video) {
 	return p.VideoInfos
 }
-func (p *GetManyVideoInfosResponse) SetStatusCode(val int64) {
-	p.StatusCode = val
-}
-func (p *GetManyVideoInfosResponse) SetStatusMsg(val string) {
-	p.StatusMsg = val
+func (p *GetManyVideoInfosResponse) SetBaseResp(val *BaseResp) {
+	p.BaseResp = val
 }
 func (p *GetManyVideoInfosResponse) SetVideoInfos(val []*Video) {
 	p.VideoInfos = val
 }
 
 var fieldIDToName_GetManyVideoInfosResponse = map[int16]string{
-	1: "status_code",
-	2: "status_msg",
-	3: "video_infos",
+	1: "base_resp",
+	2: "video_infos",
+}
+
+func (p *GetManyVideoInfosResponse) IsSetBaseResp() bool {
+	return p.BaseResp != nil
 }
 
 func (p *GetManyVideoInfosResponse) Read(iprot thrift.TProtocol) (err error) {
@@ -3151,7 +3329,7 @@ func (p *GetManyVideoInfosResponse) Read(iprot thrift.TProtocol) (err error) {
 
 		switch fieldId {
 		case 1:
-			if fieldTypeId == thrift.I64 {
+			if fieldTypeId == thrift.STRUCT {
 				if err = p.ReadField1(iprot); err != nil {
 					goto ReadFieldError
 				}
@@ -3161,18 +3339,8 @@ func (p *GetManyVideoInfosResponse) Read(iprot thrift.TProtocol) (err error) {
 				}
 			}
 		case 2:
-			if fieldTypeId == thrift.STRING {
-				if err = p.ReadField2(iprot); err != nil {
-					goto ReadFieldError
-				}
-			} else {
-				if err = iprot.Skip(fieldTypeId); err != nil {
-					goto SkipFieldError
-				}
-			}
-		case 3:
 			if fieldTypeId == thrift.LIST {
-				if err = p.ReadField3(iprot); err != nil {
+				if err = p.ReadField2(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else {
@@ -3211,24 +3379,14 @@ ReadStructEndError:
 }
 
 func (p *GetManyVideoInfosResponse) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI64(); err != nil {
+	p.BaseResp = NewBaseResp()
+	if err := p.BaseResp.Read(iprot); err != nil {
 		return err
-	} else {
-		p.StatusCode = v
 	}
 	return nil
 }
 
 func (p *GetManyVideoInfosResponse) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadString(); err != nil {
-		return err
-	} else {
-		p.StatusMsg = v
-	}
-	return nil
-}
-
-func (p *GetManyVideoInfosResponse) ReadField3(iprot thrift.TProtocol) error {
 	_, size, err := iprot.ReadListBegin()
 	if err != nil {
 		return err
@@ -3262,10 +3420,6 @@ func (p *GetManyVideoInfosResponse) Write(oprot thrift.TProtocol) (err error) {
 			fieldId = 2
 			goto WriteFieldError
 		}
-		if err = p.writeField3(oprot); err != nil {
-			fieldId = 3
-			goto WriteFieldError
-		}
 
 	}
 	if err = oprot.WriteFieldStop(); err != nil {
@@ -3286,10 +3440,10 @@ WriteStructEndError:
 }
 
 func (p *GetManyVideoInfosResponse) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
+	if err = oprot.WriteFieldBegin("base_resp", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI64(p.StatusCode); err != nil {
+	if err := p.BaseResp.Write(oprot); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -3303,24 +3457,7 @@ WriteFieldEndError:
 }
 
 func (p *GetManyVideoInfosResponse) writeField2(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_msg", thrift.STRING, 2); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := oprot.WriteString(p.StatusMsg); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
-	}
-	return nil
-WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
-WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
-}
-
-func (p *GetManyVideoInfosResponse) writeField3(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("video_infos", thrift.LIST, 3); err != nil {
+	if err = oprot.WriteFieldBegin("video_infos", thrift.LIST, 2); err != nil {
 		goto WriteFieldBeginError
 	}
 	if err := oprot.WriteListBegin(thrift.STRUCT, len(p.VideoInfos)); err != nil {
@@ -3339,9 +3476,9 @@ func (p *GetManyVideoInfosResponse) writeField3(oprot thrift.TProtocol) (err err
 	}
 	return nil
 WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 3 begin error: ", p), err)
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
 WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 3 end error: ", p), err)
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
 }
 
 func (p *GetManyVideoInfosResponse) String() string {
@@ -3357,33 +3494,23 @@ func (p *GetManyVideoInfosResponse) DeepEqual(ano *GetManyVideoInfosResponse) bo
 	} else if p == nil || ano == nil {
 		return false
 	}
-	if !p.Field1DeepEqual(ano.StatusCode) {
+	if !p.Field1DeepEqual(ano.BaseResp) {
 		return false
 	}
-	if !p.Field2DeepEqual(ano.StatusMsg) {
-		return false
-	}
-	if !p.Field3DeepEqual(ano.VideoInfos) {
+	if !p.Field2DeepEqual(ano.VideoInfos) {
 		return false
 	}
 	return true
 }
 
-func (p *GetManyVideoInfosResponse) Field1DeepEqual(src int64) bool {
+func (p *GetManyVideoInfosResponse) Field1DeepEqual(src *BaseResp) bool {
 
-	if p.StatusCode != src {
+	if !p.BaseResp.DeepEqual(src) {
 		return false
 	}
 	return true
 }
-func (p *GetManyVideoInfosResponse) Field2DeepEqual(src string) bool {
-
-	if strings.Compare(p.StatusMsg, src) != 0 {
-		return false
-	}
-	return true
-}
-func (p *GetManyVideoInfosResponse) Field3DeepEqual(src []*Video) bool {
+func (p *GetManyVideoInfosResponse) Field2DeepEqual(src []*Video) bool {
 
 	if len(p.VideoInfos) != len(src) {
 		return false
@@ -3562,8 +3689,7 @@ func (p *AddVideoFavoriteCountRequest) Field1DeepEqual(src int64) bool {
 }
 
 type AddVideoFavoriteCountResponse struct {
-	StatusCode int64  `thrift:"status_code,1" frugal:"1,default,i64" json:"status_code"`
-	StatusMsg  string `thrift:"status_msg,2" frugal:"2,default,string" json:"status_msg"`
+	BaseResp *BaseResp `thrift:"base_resp,1" frugal:"1,default,BaseResp" json:"base_resp"`
 }
 
 func NewAddVideoFavoriteCountResponse() *AddVideoFavoriteCountResponse {
@@ -3574,23 +3700,24 @@ func (p *AddVideoFavoriteCountResponse) InitDefault() {
 	*p = AddVideoFavoriteCountResponse{}
 }
 
-func (p *AddVideoFavoriteCountResponse) GetStatusCode() (v int64) {
-	return p.StatusCode
-}
+var AddVideoFavoriteCountResponse_BaseResp_DEFAULT *BaseResp
 
-func (p *AddVideoFavoriteCountResponse) GetStatusMsg() (v string) {
-	return p.StatusMsg
+func (p *AddVideoFavoriteCountResponse) GetBaseResp() (v *BaseResp) {
+	if !p.IsSetBaseResp() {
+		return AddVideoFavoriteCountResponse_BaseResp_DEFAULT
+	}
+	return p.BaseResp
 }
-func (p *AddVideoFavoriteCountResponse) SetStatusCode(val int64) {
-	p.StatusCode = val
-}
-func (p *AddVideoFavoriteCountResponse) SetStatusMsg(val string) {
-	p.StatusMsg = val
+func (p *AddVideoFavoriteCountResponse) SetBaseResp(val *BaseResp) {
+	p.BaseResp = val
 }
 
 var fieldIDToName_AddVideoFavoriteCountResponse = map[int16]string{
-	1: "status_code",
-	2: "status_msg",
+	1: "base_resp",
+}
+
+func (p *AddVideoFavoriteCountResponse) IsSetBaseResp() bool {
+	return p.BaseResp != nil
 }
 
 func (p *AddVideoFavoriteCountResponse) Read(iprot thrift.TProtocol) (err error) {
@@ -3613,18 +3740,8 @@ func (p *AddVideoFavoriteCountResponse) Read(iprot thrift.TProtocol) (err error)
 
 		switch fieldId {
 		case 1:
-			if fieldTypeId == thrift.I64 {
+			if fieldTypeId == thrift.STRUCT {
 				if err = p.ReadField1(iprot); err != nil {
-					goto ReadFieldError
-				}
-			} else {
-				if err = iprot.Skip(fieldTypeId); err != nil {
-					goto SkipFieldError
-				}
-			}
-		case 2:
-			if fieldTypeId == thrift.STRING {
-				if err = p.ReadField2(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else {
@@ -3663,19 +3780,9 @@ ReadStructEndError:
 }
 
 func (p *AddVideoFavoriteCountResponse) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI64(); err != nil {
+	p.BaseResp = NewBaseResp()
+	if err := p.BaseResp.Read(iprot); err != nil {
 		return err
-	} else {
-		p.StatusCode = v
-	}
-	return nil
-}
-
-func (p *AddVideoFavoriteCountResponse) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadString(); err != nil {
-		return err
-	} else {
-		p.StatusMsg = v
 	}
 	return nil
 }
@@ -3688,10 +3795,6 @@ func (p *AddVideoFavoriteCountResponse) Write(oprot thrift.TProtocol) (err error
 	if p != nil {
 		if err = p.writeField1(oprot); err != nil {
 			fieldId = 1
-			goto WriteFieldError
-		}
-		if err = p.writeField2(oprot); err != nil {
-			fieldId = 2
 			goto WriteFieldError
 		}
 
@@ -3714,10 +3817,10 @@ WriteStructEndError:
 }
 
 func (p *AddVideoFavoriteCountResponse) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
+	if err = oprot.WriteFieldBegin("base_resp", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI64(p.StatusCode); err != nil {
+	if err := p.BaseResp.Write(oprot); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -3728,23 +3831,6 @@ WriteFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
 WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
-}
-
-func (p *AddVideoFavoriteCountResponse) writeField2(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_msg", thrift.STRING, 2); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := oprot.WriteString(p.StatusMsg); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
-	}
-	return nil
-WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
-WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
 }
 
 func (p *AddVideoFavoriteCountResponse) String() string {
@@ -3760,25 +3846,15 @@ func (p *AddVideoFavoriteCountResponse) DeepEqual(ano *AddVideoFavoriteCountResp
 	} else if p == nil || ano == nil {
 		return false
 	}
-	if !p.Field1DeepEqual(ano.StatusCode) {
-		return false
-	}
-	if !p.Field2DeepEqual(ano.StatusMsg) {
+	if !p.Field1DeepEqual(ano.BaseResp) {
 		return false
 	}
 	return true
 }
 
-func (p *AddVideoFavoriteCountResponse) Field1DeepEqual(src int64) bool {
+func (p *AddVideoFavoriteCountResponse) Field1DeepEqual(src *BaseResp) bool {
 
-	if p.StatusCode != src {
-		return false
-	}
-	return true
-}
-func (p *AddVideoFavoriteCountResponse) Field2DeepEqual(src string) bool {
-
-	if strings.Compare(p.StatusMsg, src) != 0 {
+	if !p.BaseResp.DeepEqual(src) {
 		return false
 	}
 	return true
@@ -3949,8 +4025,7 @@ func (p *SubVideoFavoriteCountRequest) Field1DeepEqual(src int64) bool {
 }
 
 type SubVideoFavoriteCountResponse struct {
-	StatusCode int64  `thrift:"status_code,1" frugal:"1,default,i64" json:"status_code"`
-	StatusMsg  string `thrift:"status_msg,2" frugal:"2,default,string" json:"status_msg"`
+	BaseResp *BaseResp `thrift:"base_resp,1" frugal:"1,default,BaseResp" json:"base_resp"`
 }
 
 func NewSubVideoFavoriteCountResponse() *SubVideoFavoriteCountResponse {
@@ -3961,23 +4036,24 @@ func (p *SubVideoFavoriteCountResponse) InitDefault() {
 	*p = SubVideoFavoriteCountResponse{}
 }
 
-func (p *SubVideoFavoriteCountResponse) GetStatusCode() (v int64) {
-	return p.StatusCode
-}
+var SubVideoFavoriteCountResponse_BaseResp_DEFAULT *BaseResp
 
-func (p *SubVideoFavoriteCountResponse) GetStatusMsg() (v string) {
-	return p.StatusMsg
+func (p *SubVideoFavoriteCountResponse) GetBaseResp() (v *BaseResp) {
+	if !p.IsSetBaseResp() {
+		return SubVideoFavoriteCountResponse_BaseResp_DEFAULT
+	}
+	return p.BaseResp
 }
-func (p *SubVideoFavoriteCountResponse) SetStatusCode(val int64) {
-	p.StatusCode = val
-}
-func (p *SubVideoFavoriteCountResponse) SetStatusMsg(val string) {
-	p.StatusMsg = val
+func (p *SubVideoFavoriteCountResponse) SetBaseResp(val *BaseResp) {
+	p.BaseResp = val
 }
 
 var fieldIDToName_SubVideoFavoriteCountResponse = map[int16]string{
-	1: "status_code",
-	2: "status_msg",
+	1: "base_resp",
+}
+
+func (p *SubVideoFavoriteCountResponse) IsSetBaseResp() bool {
+	return p.BaseResp != nil
 }
 
 func (p *SubVideoFavoriteCountResponse) Read(iprot thrift.TProtocol) (err error) {
@@ -4000,18 +4076,8 @@ func (p *SubVideoFavoriteCountResponse) Read(iprot thrift.TProtocol) (err error)
 
 		switch fieldId {
 		case 1:
-			if fieldTypeId == thrift.I64 {
+			if fieldTypeId == thrift.STRUCT {
 				if err = p.ReadField1(iprot); err != nil {
-					goto ReadFieldError
-				}
-			} else {
-				if err = iprot.Skip(fieldTypeId); err != nil {
-					goto SkipFieldError
-				}
-			}
-		case 2:
-			if fieldTypeId == thrift.STRING {
-				if err = p.ReadField2(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else {
@@ -4050,19 +4116,9 @@ ReadStructEndError:
 }
 
 func (p *SubVideoFavoriteCountResponse) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI64(); err != nil {
+	p.BaseResp = NewBaseResp()
+	if err := p.BaseResp.Read(iprot); err != nil {
 		return err
-	} else {
-		p.StatusCode = v
-	}
-	return nil
-}
-
-func (p *SubVideoFavoriteCountResponse) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadString(); err != nil {
-		return err
-	} else {
-		p.StatusMsg = v
 	}
 	return nil
 }
@@ -4075,10 +4131,6 @@ func (p *SubVideoFavoriteCountResponse) Write(oprot thrift.TProtocol) (err error
 	if p != nil {
 		if err = p.writeField1(oprot); err != nil {
 			fieldId = 1
-			goto WriteFieldError
-		}
-		if err = p.writeField2(oprot); err != nil {
-			fieldId = 2
 			goto WriteFieldError
 		}
 
@@ -4101,10 +4153,10 @@ WriteStructEndError:
 }
 
 func (p *SubVideoFavoriteCountResponse) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
+	if err = oprot.WriteFieldBegin("base_resp", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI64(p.StatusCode); err != nil {
+	if err := p.BaseResp.Write(oprot); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -4115,23 +4167,6 @@ WriteFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
 WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
-}
-
-func (p *SubVideoFavoriteCountResponse) writeField2(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_msg", thrift.STRING, 2); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := oprot.WriteString(p.StatusMsg); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
-	}
-	return nil
-WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
-WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
 }
 
 func (p *SubVideoFavoriteCountResponse) String() string {
@@ -4147,25 +4182,15 @@ func (p *SubVideoFavoriteCountResponse) DeepEqual(ano *SubVideoFavoriteCountResp
 	} else if p == nil || ano == nil {
 		return false
 	}
-	if !p.Field1DeepEqual(ano.StatusCode) {
-		return false
-	}
-	if !p.Field2DeepEqual(ano.StatusMsg) {
+	if !p.Field1DeepEqual(ano.BaseResp) {
 		return false
 	}
 	return true
 }
 
-func (p *SubVideoFavoriteCountResponse) Field1DeepEqual(src int64) bool {
+func (p *SubVideoFavoriteCountResponse) Field1DeepEqual(src *BaseResp) bool {
 
-	if p.StatusCode != src {
-		return false
-	}
-	return true
-}
-func (p *SubVideoFavoriteCountResponse) Field2DeepEqual(src string) bool {
-
-	if strings.Compare(p.StatusMsg, src) != 0 {
+	if !p.BaseResp.DeepEqual(src) {
 		return false
 	}
 	return true
@@ -4336,8 +4361,7 @@ func (p *AddVideoCommentCountRequest) Field1DeepEqual(src int64) bool {
 }
 
 type AddVideoCommentCountResponse struct {
-	StatusCode int64  `thrift:"status_code,1" frugal:"1,default,i64" json:"status_code"`
-	StatusMsg  string `thrift:"status_msg,2" frugal:"2,default,string" json:"status_msg"`
+	BaseResp *BaseResp `thrift:"base_resp,1" frugal:"1,default,BaseResp" json:"base_resp"`
 }
 
 func NewAddVideoCommentCountResponse() *AddVideoCommentCountResponse {
@@ -4348,23 +4372,24 @@ func (p *AddVideoCommentCountResponse) InitDefault() {
 	*p = AddVideoCommentCountResponse{}
 }
 
-func (p *AddVideoCommentCountResponse) GetStatusCode() (v int64) {
-	return p.StatusCode
-}
+var AddVideoCommentCountResponse_BaseResp_DEFAULT *BaseResp
 
-func (p *AddVideoCommentCountResponse) GetStatusMsg() (v string) {
-	return p.StatusMsg
+func (p *AddVideoCommentCountResponse) GetBaseResp() (v *BaseResp) {
+	if !p.IsSetBaseResp() {
+		return AddVideoCommentCountResponse_BaseResp_DEFAULT
+	}
+	return p.BaseResp
 }
-func (p *AddVideoCommentCountResponse) SetStatusCode(val int64) {
-	p.StatusCode = val
-}
-func (p *AddVideoCommentCountResponse) SetStatusMsg(val string) {
-	p.StatusMsg = val
+func (p *AddVideoCommentCountResponse) SetBaseResp(val *BaseResp) {
+	p.BaseResp = val
 }
 
 var fieldIDToName_AddVideoCommentCountResponse = map[int16]string{
-	1: "status_code",
-	2: "status_msg",
+	1: "base_resp",
+}
+
+func (p *AddVideoCommentCountResponse) IsSetBaseResp() bool {
+	return p.BaseResp != nil
 }
 
 func (p *AddVideoCommentCountResponse) Read(iprot thrift.TProtocol) (err error) {
@@ -4387,18 +4412,8 @@ func (p *AddVideoCommentCountResponse) Read(iprot thrift.TProtocol) (err error) 
 
 		switch fieldId {
 		case 1:
-			if fieldTypeId == thrift.I64 {
+			if fieldTypeId == thrift.STRUCT {
 				if err = p.ReadField1(iprot); err != nil {
-					goto ReadFieldError
-				}
-			} else {
-				if err = iprot.Skip(fieldTypeId); err != nil {
-					goto SkipFieldError
-				}
-			}
-		case 2:
-			if fieldTypeId == thrift.STRING {
-				if err = p.ReadField2(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else {
@@ -4437,19 +4452,9 @@ ReadStructEndError:
 }
 
 func (p *AddVideoCommentCountResponse) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI64(); err != nil {
+	p.BaseResp = NewBaseResp()
+	if err := p.BaseResp.Read(iprot); err != nil {
 		return err
-	} else {
-		p.StatusCode = v
-	}
-	return nil
-}
-
-func (p *AddVideoCommentCountResponse) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadString(); err != nil {
-		return err
-	} else {
-		p.StatusMsg = v
 	}
 	return nil
 }
@@ -4462,10 +4467,6 @@ func (p *AddVideoCommentCountResponse) Write(oprot thrift.TProtocol) (err error)
 	if p != nil {
 		if err = p.writeField1(oprot); err != nil {
 			fieldId = 1
-			goto WriteFieldError
-		}
-		if err = p.writeField2(oprot); err != nil {
-			fieldId = 2
 			goto WriteFieldError
 		}
 
@@ -4488,10 +4489,10 @@ WriteStructEndError:
 }
 
 func (p *AddVideoCommentCountResponse) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
+	if err = oprot.WriteFieldBegin("base_resp", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI64(p.StatusCode); err != nil {
+	if err := p.BaseResp.Write(oprot); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -4502,23 +4503,6 @@ WriteFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
 WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
-}
-
-func (p *AddVideoCommentCountResponse) writeField2(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_msg", thrift.STRING, 2); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := oprot.WriteString(p.StatusMsg); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
-	}
-	return nil
-WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
-WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
 }
 
 func (p *AddVideoCommentCountResponse) String() string {
@@ -4534,25 +4518,15 @@ func (p *AddVideoCommentCountResponse) DeepEqual(ano *AddVideoCommentCountRespon
 	} else if p == nil || ano == nil {
 		return false
 	}
-	if !p.Field1DeepEqual(ano.StatusCode) {
-		return false
-	}
-	if !p.Field2DeepEqual(ano.StatusMsg) {
+	if !p.Field1DeepEqual(ano.BaseResp) {
 		return false
 	}
 	return true
 }
 
-func (p *AddVideoCommentCountResponse) Field1DeepEqual(src int64) bool {
+func (p *AddVideoCommentCountResponse) Field1DeepEqual(src *BaseResp) bool {
 
-	if p.StatusCode != src {
-		return false
-	}
-	return true
-}
-func (p *AddVideoCommentCountResponse) Field2DeepEqual(src string) bool {
-
-	if strings.Compare(p.StatusMsg, src) != 0 {
+	if !p.BaseResp.DeepEqual(src) {
 		return false
 	}
 	return true
@@ -4723,8 +4697,7 @@ func (p *SubVideoCommentCountRequest) Field1DeepEqual(src int64) bool {
 }
 
 type SubVideoCommentCountResponse struct {
-	StatusCode int64  `thrift:"status_code,1" frugal:"1,default,i64" json:"status_code"`
-	StatusMsg  string `thrift:"status_msg,2" frugal:"2,default,string" json:"status_msg"`
+	BaseResp *BaseResp `thrift:"base_resp,1" frugal:"1,default,BaseResp" json:"base_resp"`
 }
 
 func NewSubVideoCommentCountResponse() *SubVideoCommentCountResponse {
@@ -4735,23 +4708,24 @@ func (p *SubVideoCommentCountResponse) InitDefault() {
 	*p = SubVideoCommentCountResponse{}
 }
 
-func (p *SubVideoCommentCountResponse) GetStatusCode() (v int64) {
-	return p.StatusCode
-}
+var SubVideoCommentCountResponse_BaseResp_DEFAULT *BaseResp
 
-func (p *SubVideoCommentCountResponse) GetStatusMsg() (v string) {
-	return p.StatusMsg
+func (p *SubVideoCommentCountResponse) GetBaseResp() (v *BaseResp) {
+	if !p.IsSetBaseResp() {
+		return SubVideoCommentCountResponse_BaseResp_DEFAULT
+	}
+	return p.BaseResp
 }
-func (p *SubVideoCommentCountResponse) SetStatusCode(val int64) {
-	p.StatusCode = val
-}
-func (p *SubVideoCommentCountResponse) SetStatusMsg(val string) {
-	p.StatusMsg = val
+func (p *SubVideoCommentCountResponse) SetBaseResp(val *BaseResp) {
+	p.BaseResp = val
 }
 
 var fieldIDToName_SubVideoCommentCountResponse = map[int16]string{
-	1: "status_code",
-	2: "status_msg",
+	1: "base_resp",
+}
+
+func (p *SubVideoCommentCountResponse) IsSetBaseResp() bool {
+	return p.BaseResp != nil
 }
 
 func (p *SubVideoCommentCountResponse) Read(iprot thrift.TProtocol) (err error) {
@@ -4774,18 +4748,8 @@ func (p *SubVideoCommentCountResponse) Read(iprot thrift.TProtocol) (err error) 
 
 		switch fieldId {
 		case 1:
-			if fieldTypeId == thrift.I64 {
+			if fieldTypeId == thrift.STRUCT {
 				if err = p.ReadField1(iprot); err != nil {
-					goto ReadFieldError
-				}
-			} else {
-				if err = iprot.Skip(fieldTypeId); err != nil {
-					goto SkipFieldError
-				}
-			}
-		case 2:
-			if fieldTypeId == thrift.STRING {
-				if err = p.ReadField2(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else {
@@ -4824,19 +4788,9 @@ ReadStructEndError:
 }
 
 func (p *SubVideoCommentCountResponse) ReadField1(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadI64(); err != nil {
+	p.BaseResp = NewBaseResp()
+	if err := p.BaseResp.Read(iprot); err != nil {
 		return err
-	} else {
-		p.StatusCode = v
-	}
-	return nil
-}
-
-func (p *SubVideoCommentCountResponse) ReadField2(iprot thrift.TProtocol) error {
-	if v, err := iprot.ReadString(); err != nil {
-		return err
-	} else {
-		p.StatusMsg = v
 	}
 	return nil
 }
@@ -4849,10 +4803,6 @@ func (p *SubVideoCommentCountResponse) Write(oprot thrift.TProtocol) (err error)
 	if p != nil {
 		if err = p.writeField1(oprot); err != nil {
 			fieldId = 1
-			goto WriteFieldError
-		}
-		if err = p.writeField2(oprot); err != nil {
-			fieldId = 2
 			goto WriteFieldError
 		}
 
@@ -4875,10 +4825,10 @@ WriteStructEndError:
 }
 
 func (p *SubVideoCommentCountResponse) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_code", thrift.I64, 1); err != nil {
+	if err = oprot.WriteFieldBegin("base_resp", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteI64(p.StatusCode); err != nil {
+	if err := p.BaseResp.Write(oprot); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -4889,23 +4839,6 @@ WriteFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
 WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
-}
-
-func (p *SubVideoCommentCountResponse) writeField2(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("status_msg", thrift.STRING, 2); err != nil {
-		goto WriteFieldBeginError
-	}
-	if err := oprot.WriteString(p.StatusMsg); err != nil {
-		return err
-	}
-	if err = oprot.WriteFieldEnd(); err != nil {
-		goto WriteFieldEndError
-	}
-	return nil
-WriteFieldBeginError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
-WriteFieldEndError:
-	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
 }
 
 func (p *SubVideoCommentCountResponse) String() string {
@@ -4921,25 +4854,15 @@ func (p *SubVideoCommentCountResponse) DeepEqual(ano *SubVideoCommentCountRespon
 	} else if p == nil || ano == nil {
 		return false
 	}
-	if !p.Field1DeepEqual(ano.StatusCode) {
-		return false
-	}
-	if !p.Field2DeepEqual(ano.StatusMsg) {
+	if !p.Field1DeepEqual(ano.BaseResp) {
 		return false
 	}
 	return true
 }
 
-func (p *SubVideoCommentCountResponse) Field1DeepEqual(src int64) bool {
+func (p *SubVideoCommentCountResponse) Field1DeepEqual(src *BaseResp) bool {
 
-	if p.StatusCode != src {
-		return false
-	}
-	return true
-}
-func (p *SubVideoCommentCountResponse) Field2DeepEqual(src string) bool {
-
-	if strings.Compare(p.StatusMsg, src) != 0 {
+	if !p.BaseResp.DeepEqual(src) {
 		return false
 	}
 	return true

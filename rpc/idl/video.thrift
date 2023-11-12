@@ -3,6 +3,45 @@ include "user.thrift"
 
 namespace go video
 
+enum ErrCode {
+    SuccessCode                = 0,
+    ServiceErrCode             = 1,
+    ParamErrCode               = 2,
+    MysqlErrCode               = 3,
+    RedisErrCode               = 4,
+
+    UserIsNotExistErrCode      = 10005,
+    PasswordIsNotVerifiedCode  = 10006,
+    AuthorizationFailedErrCode = 10007,
+    UserAlreadyExistErrCode    = 10008,
+    UpdateUserCountFailedErrCode = 10009,
+
+    FollowRelationAlreadyExistErrCode = 20010,
+    FollowRelationNotExistErrCode      = 20011,
+
+    FavoriteActionErrCode            = 30012,
+    FavoriteAddFailedCode             = 30013,
+    FavoriteRelationAlreadyExistErrCode = 30014,
+    FavoriteRelationNotExistErrCode = 30015,
+
+    ChatActionErrCode          = 40016,
+    MessageAddFailedErrCode    = 40017,
+    FriendListNoPermissionErrCode = 40018,
+
+    VideoFeedErrCode              = 50019,
+    VideoIsNotExistErrCode        = 50020,
+    UpdateVideoCountFailedErrCode = 50021,
+
+    CommentActionErrCode     = 60022,
+    CommentIsNotExistErrCode  = 60023,
+    CommentAddFailedErrCode   = 60024,
+}
+
+struct BaseResp {
+    1: i64 status_code// 表示注册操作结果的状态码
+    2: string status_msg// 提供有关注册状态的额外信息的状态消息
+}
+
 // 请求视频动态流的结构体
 struct VideoFeedRequest {
     1: optional i64 latest_time; // 可选参数，限制返回视频的最新投稿时间戳，精确到秒，不填表示当前时间
@@ -12,10 +51,9 @@ struct VideoFeedRequest {
 
 // 视频动态流响应结构体
 struct VideoFeedResponse {
-    1: i64 status_code; // 状态码，0-成功，其他值-失败
-    2: string status_msg; // 返回状态描述
-    3: list<Video> video_list; // 视频列表
-    4: optional i64 next_time; // 本次返回的视频中，发布最早的时间，作为下次请求时的latest_time
+    1: BaseResp base_resp
+    2: list<Video> video_list; // 视频列表
+    3: optional i64 next_time; // 本次返回的视频中，发布最早的时间，作为下次请求时的latest_time
 }
 
 // 视频结构体
@@ -39,8 +77,7 @@ struct VideoPublishRequest {
 
 // 发布视频响应结构体
 struct VideoPublishResponse {
-    1: i64 status_code; // 状态码，0-成功，其他值-失败
-    2: string status_msg; // 返回状态描述
+    1: BaseResp base_resp
 }
 
 // 获取用户发布的视频列表请求结构体
@@ -51,9 +88,8 @@ struct PublishListRequest {
 
 // 获取用户发布的视频列表响应结构体
 struct PublishListResponse {
-    1: i64 status_code; // 状态码，0-成功，其他值-失败
-    2: string status_msg; // 返回状态描述
-    3: list<Video> video_list; // 用户发布的视频列表
+    1: BaseResp base_resp
+    2: list<Video> video_list; // 用户发布的视频列表
 }
 
 // 获取视频信息请求结构体
@@ -64,9 +100,8 @@ struct GetVideoInfoRequest {
 
 // 获取视频信息响应结构体
 struct GetVideoInfoResponse {
-    1: i64 status_code; // 状态码，0-成功，其他值-失败
-    2: string status_msg; // 返回状态描述
-    3: Video video_info; // 视频信息
+    1: BaseResp base_resp
+    2: Video video_info; // 视频信息
 }
 
 // 批量获取视频信息请求结构体
@@ -77,9 +112,8 @@ struct GetManyVideoInfosRequest {
 
 // 批量获取视频信息响应结构体
 struct GetManyVideoInfosResponse {
-    1: i64 status_code; // 状态码，0-成功，其他值-失败
-    2: string status_msg; // 返回状态描述
-    3: list<Video> video_infos; // 视频信息列表
+    1: BaseResp base_resp
+    2: list<Video> video_infos; // 视频信息列表
 }
 
 // 增加视频点赞数请求结构体
@@ -89,8 +123,7 @@ struct AddVideoFavoriteCountRequest {
 
 // 增加视频点赞数响应结构体
 struct AddVideoFavoriteCountResponse {
-    1: i64 status_code; // 状态码，0-成功，其他值-失败
-    2: string status_msg; // 返回状态描述
+    1: BaseResp base_resp
 }
 
 // 减少视频点赞数请求结构体
@@ -100,8 +133,7 @@ struct SubVideoFavoriteCountRequest {
 
 // 减少视频点赞数响应结构体
 struct SubVideoFavoriteCountResponse {
-    1: i64 status_code; // 状态码，0-成功，其他值-失败
-    2: string status_msg; // 返回状态描述
+    1: BaseResp base_resp
 }
 
 // 增加视频评论数请求结构体
@@ -111,8 +143,7 @@ struct AddVideoCommentCountRequest {
 
 // 增加视频评论数响应结构体
 struct AddVideoCommentCountResponse {
-    1: i64 status_code; // 状态码，0-成功，其他值-失败
-    2: string status_msg; // 返回状态描述
+    1: BaseResp base_resp
 }
 
 // 减少视频评论数请求结构体
@@ -122,8 +153,7 @@ struct SubVideoCommentCountRequest {
 
 // 减少视频评论数响应结构体
 struct SubVideoCommentCountResponse {
-    1: i64 status_code; // 状态码，0-成功，其他值-失败
-    2: string status_msg; // 返回状态描述
+    1: BaseResp base_resp
 }
 
 // 视频服务接口定义

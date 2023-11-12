@@ -1,14 +1,37 @@
 namespace go user
 
 enum ErrCode {
-    SuccessCode                = 0
-    ServiceErrCode             = 10001
-    ParamErrCode               = 10002
-    UserAlreadyExistErrCode    = 10003
-    AuthorizationFailedErrCode = 10004
-    UpdateFollowCountFailedErrCode = 10005
-    UpdateUserWorkCountFailedErrCode = 10006
-    UpdateUserFavoriteCountFailedErrCode = 10007
+    SuccessCode                = 0,
+    ServiceErrCode             = 1,
+    ParamErrCode               = 2,
+    MysqlErrCode               = 3,
+    RedisErrCode               = 4,
+
+    UserIsNotExistErrCode      = 10005,
+    PasswordIsNotVerifiedCode  = 10006,
+    AuthorizationFailedErrCode = 10007,
+    UserAlreadyExistErrCode    = 10008,
+    UpdateUserCountFailedErrCode = 10009,
+
+    FollowRelationAlreadyExistErrCode = 20010,
+    FollowRelationNotExistErrCode      = 20011,
+
+    FavoriteActionErrCode            = 30012,
+    FavoriteAddFailedCode             = 30013,
+    FavoriteRelationAlreadyExistErrCode = 30014,
+    FavoriteRelationNotExistErrCode = 30015,
+
+    ChatActionErrCode          = 40016,
+    MessageAddFailedErrCode    = 40017,
+    FriendListNoPermissionErrCode = 40018,
+
+    VideoFeedErrCode              = 50019,
+    VideoIsNotExistErrCode        = 50020,
+    UpdateVideoCountFailedErrCode = 50021,
+
+    CommentActionErrCode     = 60022,
+    CommentIsNotExistErrCode  = 60023,
+    CommentAddFailedErrCode   = 60024,
 }
 
 struct BaseResp {

@@ -14,14 +14,31 @@ import (
 type ErrCode int64
 
 const (
-	ErrCode_SuccessCode                          ErrCode = 0
-	ErrCode_ServiceErrCode                       ErrCode = 10001
-	ErrCode_ParamErrCode                         ErrCode = 10002
-	ErrCode_UserAlreadyExistErrCode              ErrCode = 10003
-	ErrCode_AuthorizationFailedErrCode           ErrCode = 10004
-	ErrCode_UpdateFollowCountFailedErrCode       ErrCode = 10005
-	ErrCode_UpdateUserWorkCountFailedErrCode     ErrCode = 10006
-	ErrCode_UpdateUserFavoriteCountFailedErrCode ErrCode = 10007
+	ErrCode_SuccessCode                         ErrCode = 0
+	ErrCode_ServiceErrCode                      ErrCode = 1
+	ErrCode_ParamErrCode                        ErrCode = 2
+	ErrCode_MysqlErrCode                        ErrCode = 3
+	ErrCode_RedisErrCode                        ErrCode = 4
+	ErrCode_UserIsNotExistErrCode               ErrCode = 10005
+	ErrCode_PasswordIsNotVerifiedCode           ErrCode = 10006
+	ErrCode_AuthorizationFailedErrCode          ErrCode = 10007
+	ErrCode_UserAlreadyExistErrCode             ErrCode = 10008
+	ErrCode_UpdateUserCountFailedErrCode        ErrCode = 10009
+	ErrCode_FollowRelationAlreadyExistErrCode   ErrCode = 20010
+	ErrCode_FollowRelationNotExistErrCode       ErrCode = 20011
+	ErrCode_FavoriteActionErrCode               ErrCode = 30012
+	ErrCode_FavoriteAddFailedCode               ErrCode = 30013
+	ErrCode_FavoriteRelationAlreadyExistErrCode ErrCode = 30014
+	ErrCode_FavoriteRelationNotExistErrCode     ErrCode = 30015
+	ErrCode_ChatActionErrCode                   ErrCode = 40016
+	ErrCode_MessageAddFailedErrCode             ErrCode = 40017
+	ErrCode_FriendListNoPermissionErrCode       ErrCode = 40018
+	ErrCode_VideoFeedErrCode                    ErrCode = 50019
+	ErrCode_VideoIsNotExistErrCode              ErrCode = 50020
+	ErrCode_UpdateVideoCountFailedErrCode       ErrCode = 50021
+	ErrCode_CommentActionErrCode                ErrCode = 60022
+	ErrCode_CommentIsNotExistErrCode            ErrCode = 60023
+	ErrCode_CommentAddFailedErrCode             ErrCode = 60024
 )
 
 func (p ErrCode) String() string {
@@ -32,16 +49,50 @@ func (p ErrCode) String() string {
 		return "ServiceErrCode"
 	case ErrCode_ParamErrCode:
 		return "ParamErrCode"
-	case ErrCode_UserAlreadyExistErrCode:
-		return "UserAlreadyExistErrCode"
+	case ErrCode_MysqlErrCode:
+		return "MysqlErrCode"
+	case ErrCode_RedisErrCode:
+		return "RedisErrCode"
+	case ErrCode_UserIsNotExistErrCode:
+		return "UserIsNotExistErrCode"
+	case ErrCode_PasswordIsNotVerifiedCode:
+		return "PasswordIsNotVerifiedCode"
 	case ErrCode_AuthorizationFailedErrCode:
 		return "AuthorizationFailedErrCode"
-	case ErrCode_UpdateFollowCountFailedErrCode:
-		return "UpdateFollowCountFailedErrCode"
-	case ErrCode_UpdateUserWorkCountFailedErrCode:
-		return "UpdateUserWorkCountFailedErrCode"
-	case ErrCode_UpdateUserFavoriteCountFailedErrCode:
-		return "UpdateUserFavoriteCountFailedErrCode"
+	case ErrCode_UserAlreadyExistErrCode:
+		return "UserAlreadyExistErrCode"
+	case ErrCode_UpdateUserCountFailedErrCode:
+		return "UpdateUserCountFailedErrCode"
+	case ErrCode_FollowRelationAlreadyExistErrCode:
+		return "FollowRelationAlreadyExistErrCode"
+	case ErrCode_FollowRelationNotExistErrCode:
+		return "FollowRelationNotExistErrCode"
+	case ErrCode_FavoriteActionErrCode:
+		return "FavoriteActionErrCode"
+	case ErrCode_FavoriteAddFailedCode:
+		return "FavoriteAddFailedCode"
+	case ErrCode_FavoriteRelationAlreadyExistErrCode:
+		return "FavoriteRelationAlreadyExistErrCode"
+	case ErrCode_FavoriteRelationNotExistErrCode:
+		return "FavoriteRelationNotExistErrCode"
+	case ErrCode_ChatActionErrCode:
+		return "ChatActionErrCode"
+	case ErrCode_MessageAddFailedErrCode:
+		return "MessageAddFailedErrCode"
+	case ErrCode_FriendListNoPermissionErrCode:
+		return "FriendListNoPermissionErrCode"
+	case ErrCode_VideoFeedErrCode:
+		return "VideoFeedErrCode"
+	case ErrCode_VideoIsNotExistErrCode:
+		return "VideoIsNotExistErrCode"
+	case ErrCode_UpdateVideoCountFailedErrCode:
+		return "UpdateVideoCountFailedErrCode"
+	case ErrCode_CommentActionErrCode:
+		return "CommentActionErrCode"
+	case ErrCode_CommentIsNotExistErrCode:
+		return "CommentIsNotExistErrCode"
+	case ErrCode_CommentAddFailedErrCode:
+		return "CommentAddFailedErrCode"
 	}
 	return "<UNSET>"
 }
@@ -54,16 +105,50 @@ func ErrCodeFromString(s string) (ErrCode, error) {
 		return ErrCode_ServiceErrCode, nil
 	case "ParamErrCode":
 		return ErrCode_ParamErrCode, nil
-	case "UserAlreadyExistErrCode":
-		return ErrCode_UserAlreadyExistErrCode, nil
+	case "MysqlErrCode":
+		return ErrCode_MysqlErrCode, nil
+	case "RedisErrCode":
+		return ErrCode_RedisErrCode, nil
+	case "UserIsNotExistErrCode":
+		return ErrCode_UserIsNotExistErrCode, nil
+	case "PasswordIsNotVerifiedCode":
+		return ErrCode_PasswordIsNotVerifiedCode, nil
 	case "AuthorizationFailedErrCode":
 		return ErrCode_AuthorizationFailedErrCode, nil
-	case "UpdateFollowCountFailedErrCode":
-		return ErrCode_UpdateFollowCountFailedErrCode, nil
-	case "UpdateUserWorkCountFailedErrCode":
-		return ErrCode_UpdateUserWorkCountFailedErrCode, nil
-	case "UpdateUserFavoriteCountFailedErrCode":
-		return ErrCode_UpdateUserFavoriteCountFailedErrCode, nil
+	case "UserAlreadyExistErrCode":
+		return ErrCode_UserAlreadyExistErrCode, nil
+	case "UpdateUserCountFailedErrCode":
+		return ErrCode_UpdateUserCountFailedErrCode, nil
+	case "FollowRelationAlreadyExistErrCode":
+		return ErrCode_FollowRelationAlreadyExistErrCode, nil
+	case "FollowRelationNotExistErrCode":
+		return ErrCode_FollowRelationNotExistErrCode, nil
+	case "FavoriteActionErrCode":
+		return ErrCode_FavoriteActionErrCode, nil
+	case "FavoriteAddFailedCode":
+		return ErrCode_FavoriteAddFailedCode, nil
+	case "FavoriteRelationAlreadyExistErrCode":
+		return ErrCode_FavoriteRelationAlreadyExistErrCode, nil
+	case "FavoriteRelationNotExistErrCode":
+		return ErrCode_FavoriteRelationNotExistErrCode, nil
+	case "ChatActionErrCode":
+		return ErrCode_ChatActionErrCode, nil
+	case "MessageAddFailedErrCode":
+		return ErrCode_MessageAddFailedErrCode, nil
+	case "FriendListNoPermissionErrCode":
+		return ErrCode_FriendListNoPermissionErrCode, nil
+	case "VideoFeedErrCode":
+		return ErrCode_VideoFeedErrCode, nil
+	case "VideoIsNotExistErrCode":
+		return ErrCode_VideoIsNotExistErrCode, nil
+	case "UpdateVideoCountFailedErrCode":
+		return ErrCode_UpdateVideoCountFailedErrCode, nil
+	case "CommentActionErrCode":
+		return ErrCode_CommentActionErrCode, nil
+	case "CommentIsNotExistErrCode":
+		return ErrCode_CommentIsNotExistErrCode, nil
+	case "CommentAddFailedErrCode":
+		return ErrCode_CommentAddFailedErrCode, nil
 	}
 	return ErrCode(0), fmt.Errorf("not a valid ErrCode string")
 }
