@@ -2,5 +2,9 @@ package rpc
 
 func Init() {
 	initUser()
-	//initVideo()
+	initVideo()
+	initRelation()
+	initMessage()
+	initFavorite()
+	initComment()
 }

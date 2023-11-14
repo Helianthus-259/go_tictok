@@ -1,7 +1,7 @@
 package response
 
 import (
-	"common-components/errno"
+	"api/pkg/errno"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
 )
@@ -13,11 +13,10 @@ type Response struct {
 }
 
 // SendResponse pack response
-func SendResponse(c *app.RequestContext, err error, data interface{}) {
-	Err := errno.ConvertErr(err)
+func SendResponse(c *app.RequestContext, err errno.ErrNo, data interface{}) {
 	c.JSON(consts.StatusOK, Response{
-		StatusCode: Err.ErrCode,
-		StatusMsg:  Err.ErrMsg,
+		StatusCode: err.ErrCode,
+		StatusMsg:  err.ErrMsg,
 		Data:       data,
 	})
 }

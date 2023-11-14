@@ -34,23 +34,23 @@ func (s *LoginService) Login(req *demouser.LoginRequest) (int64, error) {
 
 	userName := req.Username
 
-	users, err := db.CheckSameAccount(s.ctx, userName)
+	users, err := db.CheckSameAccount(s.ctx, db.DB, userName)
 	if err != nil {
 		return 0, err
 	}
 	if len(users) == 0 {
-		return 0, errno.AuthorizationFailedErr
+		return 0, errno.UserIsNotExistErr
 	}
 	u := users[0]
 	if u.Password != passWord {
-		return 0, errno.AuthorizationFailedErr
+		return 0, errno.PasswordIsNotVerifiedErr
 	}
 
 	//fmt.Println(u)
 	// 将 userInfo 存储 redis
 	if err = redis.HSetUserInfo(s.ctx, model.CreateUserKey(u.ID), model.CreateMapUserInfo(&u)); err != nil {
 		err = errors.New("Redis HSetUserInfo err:" + err.Error())
-		return 0, err
+		return 0, errno.RedisErr
 	}
 	// 将 userCount 存储 redis
 	if err = redis.HSetUserCountInfo(s.ctx, model.CreateUserKey(u.ID), model.CreateMapUserCount(&model.UserCount{
@@ -62,7 +62,7 @@ func (s *LoginService) Login(req *demouser.LoginRequest) (int64, error) {
 		FavoriteCount:  0,
 	})); err != nil {
 		err = errors.New("Redis HSetUserInfo err:" + err.Error())
-		return 0, err
+		return 0, errno.RedisErr
 	}
 
 	return int64(u.ID), nil

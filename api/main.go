@@ -4,7 +4,7 @@ package main
 
 import (
 	"api/biz/rpc"
-	"api/pkg/mw"
+	"api/pkg/mw/jwt"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
 	hertzlogrus "github.com/hertz-contrib/obs-opentelemetry/logging/logrus"
@@ -14,7 +14,7 @@ import (
 
 func Init() {
 	rpc.Init()
-	mw.InitJWT()
+	jwt.InitJWT()
 	// hlog init
 	hlog.SetLogger(hertzlogrus.NewLogger())
 	hlog.SetLevel(hlog.LevelInfo)

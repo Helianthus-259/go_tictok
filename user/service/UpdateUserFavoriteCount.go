@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
-	"errors"
+	"gorm.io/gorm"
 	demouser "rpc/kitex_gen/user"
 	"user/dal/model"
 	db "user/dal/mysql"
 	"user/dal/redis"
 	"user/pkg/constants"
+	"user/pkg/errno"
 	"user/pkg/logger"
 )
 
@@ -31,43 +32,64 @@ func (s *UpdateUserFavoriteCountService) UpdateUserFavoriteCount(request *demous
 		// Add FavoriteCount in Redis
 		err = redis.AddFavoriteCount(s.ctx, userCntKey)
 		if logger.CheckError(err, "Redis AddFavoriteCount err") {
-			return
+			return errno.UpdateUserCountFailedErr
 		}
 		err = redis.AddTotalFavoriteCount(s.ctx, authorCntKey)
 		if logger.CheckError(err, "Redis AddTotalFavoriteCount err") {
-			return
+			return errno.UpdateUserCountFailedErr
 		}
 		// Add FavoriteTotalCount in Mysql
-		err = db.AddFavoriteCountByUserId(s.ctx, request.GetUserId())
-		if logger.CheckError(err, "Mysql AddFavoriteCount err") {
-			return
-		}
-		err = db.AddTotalFavoriteCountByUserId(s.ctx, request.GetAuthorId())
-		if logger.CheckError(err, "Mysql AddTotalFavoriteCount err") {
-			return
-		}
+		err = db.MyTransaction(db.DB, func(tx *gorm.DB) (err error) {
+			err = db.AddFavoriteCountByUserId(s.ctx, tx, request.GetUserId())
+			if logger.CheckError(err, "Mysql AddFavoriteCount err") {
+				return errno.UpdateUserCountFailedErr
+			}
+			err = db.AddTotalFavoriteCountByUserId(s.ctx, tx, request.GetAuthorId())
+			if logger.CheckError(err, "Mysql AddTotalFavoriteCount err") {
+				return errno.UpdateUserCountFailedErr
+			}
+			return nil
+		})
+		//err = db.AddFavoriteCountByUserId(s.ctx, request.GetUserId())
+		//if logger.CheckError(err, "Mysql AddFavoriteCount err") {
+		//	return errno.UpdateUserCountFailedErr
+		//}
+		//err = db.AddTotalFavoriteCountByUserId(s.ctx, request.GetAuthorId())
+		//if logger.CheckError(err, "Mysql AddTotalFavoriteCount err") {
+		//	return errno.UpdateUserCountFailedErr
+		//}
 	case constants.CANCELFAVORITE:
 		// Sub FavoriteCount in Redis
 		err = redis.SubFavoriteCount(s.ctx, userCntKey)
 		if logger.CheckError(err, "Redis SubFavoriteCount err") {
-			return
+			return errno.UpdateUserCountFailedErr
 		}
 		err = redis.SubTotalFavoriteCount(s.ctx, authorCntKey)
 		if logger.CheckError(err, "Redis SubTotalFavoriteCount err") {
-			return
+			return errno.UpdateUserCountFailedErr
 		}
 		// Sub FavoriteTotalCount in Mysql
-		err = db.SubFavoriteCountByUserId(s.ctx, request.GetUserId())
-		if logger.CheckError(err, "Mysql AddFavoriteCount err") {
-			return
-		}
-		err = db.SubTotalFavoriteCountByUserId(s.ctx, request.GetAuthorId())
-		if logger.CheckError(err, "Mysql AddTotalFavoriteCount err") {
-			return
-		}
+		err = db.MyTransaction(db.DB, func(tx *gorm.DB) (err error) {
+			err = db.SubFavoriteCountByUserId(s.ctx, tx, request.GetUserId())
+			if logger.CheckError(err, "Mysql AddFavoriteCount err") {
+				return errno.UpdateUserCountFailedErr
+			}
+			err = db.SubTotalFavoriteCountByUserId(s.ctx, tx, request.GetAuthorId())
+			if logger.CheckError(err, "Mysql AddTotalFavoriteCount err") {
+				return errno.UpdateUserCountFailedErr
+			}
+			return nil
+		})
+		//err = db.SubFavoriteCountByUserId(s.ctx, request.GetUserId())
+		//if logger.CheckError(err, "Mysql AddFavoriteCount err") {
+		//	return errno.UpdateUserCountFailedErr
+		//}
+		//err = db.SubTotalFavoriteCountByUserId(s.ctx, request.GetAuthorId())
+		//if logger.CheckError(err, "Mysql AddTotalFavoriteCount err") {
+		//	return errno.UpdateUserCountFailedErr
+		//}
 	default:
-		err = errors.New("no Find Favorite ActionType")
-		return
+		return errno.ServiceErr
 	}
-	return
+	return nil
 }

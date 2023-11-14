@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"gorm.io/gorm"
 	demouser "rpc/kitex_gen/user"
 	"user/dal/model"
 	db "user/dal/mysql"
 	"user/dal/redis"
+	"user/pkg/errno"
 	"user/pkg/logger"
 )
 
@@ -26,20 +28,31 @@ func (s *SubFollowCountService) SubFollowCount(request *demouser.SubFollowCountR
 	// Update UserCount from Redis
 	err = redis.SubFollowCount(s.ctx, userCountKey)
 	if logger.CheckError(err, "Redis SubFollowCount err") {
-		return
+		return errno.UpdateUserCountFailedErr
 	}
 	err = redis.SubFollowerCount(s.ctx, targetCountKey)
 	if logger.CheckError(err, "Redis SubFollowerCount err") {
-		return
+		return errno.UpdateUserCountFailedErr
 	}
 	// Update UserCount From Mysql
-	err = db.SubFollowCountByUserId(s.ctx, request.GetUserId())
-	if logger.CheckError(err, "Mysql SubFollowCount err") {
-		return
-	}
-	err = db.SubFollowerCountByUserId(s.ctx, request.GetTargetId())
-	if logger.CheckError(err, "Mysql SubFollowerCount err") {
-		return
-	}
-	return
+	err = db.MyTransaction(db.DB, func(tx *gorm.DB) (err error) {
+		err = db.SubFollowCountByUserId(s.ctx, tx, request.GetUserId())
+		if logger.CheckError(err, "Mysql SubFollowCount err") {
+			return errno.UpdateUserCountFailedErr
+		}
+		err = db.SubFollowerCountByUserId(s.ctx, tx, request.GetTargetId())
+		if logger.CheckError(err, "Mysql SubFollowerCount err") {
+			return errno.UpdateUserCountFailedErr
+		}
+		return nil
+	})
+	//err = db.SubFollowCountByUserId(s.ctx, request.GetUserId())
+	//if logger.CheckError(err, "Mysql SubFollowCount err") {
+	//	return errno.UpdateUserCountFailedErr
+	//}
+	//err = db.SubFollowerCountByUserId(s.ctx, request.GetTargetId())
+	//if logger.CheckError(err, "Mysql SubFollowerCount err") {
+	//	return errno.UpdateUserCountFailedErr
+	//}
+	return nil
 }

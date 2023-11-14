@@ -7,6 +7,7 @@ import (
 	"user/dal/model"
 	db "user/dal/mysql"
 	"user/dal/redis"
+	"user/pkg/errno"
 	"user/pkg/logger"
 )
 
@@ -29,36 +30,36 @@ func (s *GetUserListService) GetUserList(request *demouser.GetUserListRequest) (
 		userInfo, err := redis.HGetUserInfo(s.ctx, userKey)
 		if err != nil {
 			err = errors.New("Redis HSetUserInfo err:" + err.Error())
-			return nil, err
+			return nil, errno.RedisErr
 		}
 		if userInfo == nil {
-			userInfo, err = db.GetUserInfoById(s.ctx, targetId)
+			userInfo, err = db.GetUserInfoById(s.ctx, db.DB, targetId)
 			if err != nil {
 				err = errors.New("Mysql GetUserInfoById:" + err.Error())
-				return nil, err
+				return nil, errno.MysqlErr
 			}
 			// Set UserInfo into Redis
 			if err = redis.HSetUserInfo(s.ctx, userKey, model.CreateMapUserInfo(userInfo)); err != nil {
 				err = errors.New("Redis HSetUserInfo err:" + err.Error())
-				return nil, err
+				return nil, errno.RedisErr
 			}
 		}
 		// Get UserCount Info From Redis
 		userCountInfo, err := redis.HGetUserCountInfo(s.ctx, userKey)
 		if err != nil {
 			err = errors.New("Redis HGetUserCountInfo err:" + err.Error())
-			return nil, err
+			return nil, errno.RedisErr
 		}
 		if userCountInfo == nil {
 			// Get UserCount Info from mysql
-			userCountInfo, err = db.GetUserCountInfoByUserId(s.ctx, targetId)
-			if logger.CheckError(err, "Redis HGetUserCountInfo err") {
-				return nil, err
+			userCountInfo, err = db.GetUserCountInfoByUserId(s.ctx, db.DB, targetId)
+			if logger.CheckError(err, "Mysql HGetUserCountInfo err") {
+				return nil, errno.MysqlErr
 			}
 			// Set UserCountInfo into Redis
 			err = redis.HSetUserCountInfo(s.ctx, userKey, model.CreateMapUserCount(userCountInfo))
 			if logger.CheckError(err, "Redis HSetUserCountInfo err") {
-				return nil, err
+				return nil, errno.RedisErr
 			}
 		}
 		userList[i] = &demouser.User{
@@ -75,5 +76,5 @@ func (s *GetUserListService) GetUserList(request *demouser.GetUserListRequest) (
 			FavoriteCount:   &userCountInfo.FavoriteCount,
 		}
 	}
-	return
+	return userList, nil
 }

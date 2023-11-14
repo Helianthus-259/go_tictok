@@ -1,8 +1,6 @@
 package main
 
 import (
-	"common-components/constants"
-	mw "common-components/rpc-middleware"
 	"github.com/cloudwego/kitex/pkg/klog"
 	"github.com/cloudwego/kitex/pkg/limit"
 	"github.com/cloudwego/kitex/pkg/rpcinfo"
@@ -13,10 +11,14 @@ import (
 	"net"
 	"rpc/kitex_gen/user/userservice"
 	"user/dal"
+	"user/pkg/constants"
+	mw "user/pkg/rpc-middleware"
+	"user/rpc"
 )
 
 func Init() {
 	dal.Init()
+	rpc.InitRpcClient()
 	// klog init
 	klog.SetLogger(kitexlogrus.NewLogger())
 	klog.SetLevel(klog.LevelInfo)

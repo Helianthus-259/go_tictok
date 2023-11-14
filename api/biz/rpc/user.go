@@ -1,9 +1,9 @@
 package rpc
 
 import (
-	"common-components/constants"
-	"common-components/errno"
-	mw "common-components/rpc-middleware"
+	"api/pkg/constants"
+	"api/pkg/errno"
+	"api/pkg/mw/kitex-mw"
 	"github.com/cloudwego/kitex/client"
 	"github.com/cloudwego/kitex/pkg/rpcinfo"
 	"github.com/kitex-contrib/obs-opentelemetry/tracing"
@@ -15,11 +15,6 @@ import (
 
 var (
 	userClient userservice.Client
-	//InteractionClient interactionservice.Client
-	//VideoClient       videoservice.Client
-	//ChatClient        chatservice.Client
-	//FavorClient       favorservice.Client
-	//Comment           commentservice.Client
 )
 
 func initUser() {
@@ -35,19 +30,19 @@ func initUser() {
 	//defer func(ctx context.Context, p provider.OtelProvider) {
 	//	_ = p.Shutdown(ctx)
 	//}(context.Background(), p)
-	c, err := userservice.NewClient(
+	uc, err := userservice.NewClient(
 		constants.UserServiceName,
 		client.WithResolver(r),
 		client.WithMuxConnection(1),
-		client.WithMiddleware(mw.CommonMiddleware),
-		client.WithInstanceMW(mw.ClientMiddleware),
+		client.WithMiddleware(kitex_mw.CommonMiddleware),
+		client.WithInstanceMW(kitex_mw.ClientMiddleware),
 		client.WithSuite(tracing.NewClientSuite()),
 		client.WithClientBasicInfo(&rpcinfo.EndpointBasicInfo{ServiceName: constants.ApiServiceName}),
 	)
 	if err != nil {
 		panic(err)
 	}
-	userClient = c
+	userClient = uc
 }
 
 // Register Rpc Call Register User

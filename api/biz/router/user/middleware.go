@@ -3,7 +3,7 @@
 package user
 
 import (
-	"api/pkg/mw"
+	"api/pkg/mw/jwt"
 	"github.com/cloudwego/hertz/pkg/app"
 )
 
@@ -26,7 +26,7 @@ func _userindexMw() []app.HandlerFunc {
 	// your code...
 	return []app.HandlerFunc{
 		// use jwt mw
-		mw.JwtMiddleware.MiddlewareFunc(),
+		jwt.JwtMiddleware.MiddlewareFunc(),
 	}
 }
 

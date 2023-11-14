@@ -1,11 +1,11 @@
 package redis
 
 import (
-	"common-components/logger"
 	"context"
 	"github.com/go-redis/redis/v8"
 	"time"
 	"user/pkg/constants"
+	"user/pkg/logger"
 )
 
 var Rdb *redis.Client

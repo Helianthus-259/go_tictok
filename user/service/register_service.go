@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"crypto/md5"
-	"errors"
 	"fmt"
+	"gorm.io/gorm"
 	"io"
 	demouser "rpc/kitex_gen/user"
 	"user/dal/model"
@@ -28,7 +28,7 @@ func NewRegisterService(ctx context.Context) *RegisterService {
 // Register Register User
 func (s *RegisterService) Register(req *demouser.RegisterRequest) (uid int64, err error) {
 
-	users, err := db.CheckSameAccount(s.ctx, req.Username)
+	users, err := db.CheckSameAccount(s.ctx, db.DB, req.Username)
 	if err != nil {
 		return 0, err
 	}
@@ -37,11 +37,12 @@ func (s *RegisterService) Register(req *demouser.RegisterRequest) (uid int64, er
 	}
 	h := md5.New()
 	if _, err = io.WriteString(h, req.Password); err != nil {
-		return 0, err
+		return 0, errno.ServiceErr
 	}
 	password := fmt.Sprintf("%x", h.Sum(nil))
 
 	UserInfo := &model.User{
+		ID:       0,
 		Username: req.Username,
 		Password: password,
 	}
@@ -53,19 +54,31 @@ func (s *RegisterService) Register(req *demouser.RegisterRequest) (uid int64, er
 		WorkCount:      0,
 		FavoriteCount:  0,
 	}
-	uid, err = db.TransactionAdd(s.ctx, UserInfo, userCount)
+	//uid, err = db.TransactionAdd(s.ctx, UserInfo, userCount)
+	result, err := db.MyTransactionWithResult(db.DB, func(tx *gorm.DB) (interface{}, error) {
+		uid, err = db.AddUser(s.ctx, tx, UserInfo)
+		if logger.CheckError(err, "Mysql Add User err") {
+			return nil, errno.MysqlErr
+		}
+		err = db.AddUserCount(s.ctx, tx, userCount)
+		if logger.CheckError(err, "Mysql Add UserCount err") {
+			return nil, errno.MysqlErr
+		}
+		return uid, nil
+	})
 	if logger.CheckError(err, "Mysql Add User err") {
-		return 0, errno.ServiceErr
+		return 0, errno.MysqlErr
 	}
+	uid = result.(int64)
 	UserInfo.ID = uint(uid)
 	// 将 userInfo 存储 redis
 	userKey := model.CreateUserKey(UserInfo.ID)
-	if err = redis.HSetUserInfo(s.ctx, userKey, model.CreateMapUserInfo(UserInfo)); err != nil {
-		err = errors.New("Redis HSetUserInfo err:" + err.Error())
+	if err = redis.HSetUserInfo(s.ctx, userKey, model.CreateMapUserInfo(UserInfo)); logger.CheckError(err, "Redis HSetUserInfo err") {
+		return 0, errno.RedisErr
 	}
 	// 将 userCount 存储 redis
-	if err = redis.HSetUserCountInfo(s.ctx, userKey, model.CreateMapUserCount(userCount)); err != nil {
-		err = errors.New("Redis HSetUserInfo err:" + err.Error())
+	if err = redis.HSetUserCountInfo(s.ctx, userKey, model.CreateMapUserCount(userCount)); logger.CheckError(err, "Redis HSetUserCountInfo err") {
+		return 0, errno.RedisErr
 	}
-	return
+	return uid, nil
 }

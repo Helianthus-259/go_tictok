@@ -6,6 +6,7 @@ import (
 	"user/dal/model"
 	db "user/dal/mysql"
 	"user/dal/redis"
+	"user/pkg/errno"
 	"user/pkg/logger"
 )
 
@@ -25,12 +26,12 @@ func (s *AddUserWorkCountService) AddUserWorkCount(request *demouser.AddUserWork
 	// Update UserCount From Redis
 	err = redis.AddWorkCount(s.ctx, userCountKey)
 	if logger.CheckError(err, "Redis Add WorkCount err") {
-		return
+		return errno.UpdateUserCountFailedErr
 	}
 	// Update UserCount From Mysql
-	err = db.AddWorkCountByUserId(s.ctx, request.GetUserId())
+	err = db.AddWorkCountByUserId(s.ctx, db.DB, request.GetUserId())
 	if logger.CheckError(err, "Mysql Add WorkCount err") {
-		return
+		return errno.UpdateUserCountFailedErr
 	}
-	return
+	return nil
 }

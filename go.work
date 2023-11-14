@@ -6,4 +6,8 @@ use (
 	rpc
 	user
 	video
+	relation
+	favorite
+	comment
+	message
 )

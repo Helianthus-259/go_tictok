@@ -5,10 +5,10 @@ package user
 import (
 	user "api/biz/model/user"
 	rpcClient "api/biz/rpc"
-	"api/pkg/mw"
+	"api/pkg/errno"
+	"api/pkg/logger"
+	"api/pkg/mw/jwt"
 	"api/pkg/response"
-	"common-components/errno"
-	"common-components/logger"
 	"context"
 	"fmt"
 	"github.com/cloudwego/hertz/pkg/app"
@@ -27,7 +27,7 @@ func UserIndex(ctx context.Context, c *app.RequestContext) {
 		response.SendResponse(c, errno.ConvertErr(err), nil)
 		return
 	}
-	v := mw.JwtMiddleware.IdentityHandler(ctx, c)
+	v := jwt.JwtMiddleware.IdentityHandler(ctx, c)
 	params := rpcUser.UserIndexRequest{
 		UserId:   req.UserID,
 		MyUserId: v.(*user.User).ID,
@@ -82,5 +82,5 @@ func UserLogin(ctx context.Context, c *app.RequestContext) {
 	}
 	c.Set("id", id)
 	fmt.Println("logining")
-	mw.JwtMiddleware.LoginHandler(ctx, c)
+	jwt.JwtMiddleware.LoginHandler(ctx, c)
 }

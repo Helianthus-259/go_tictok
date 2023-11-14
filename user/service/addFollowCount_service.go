@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"gorm.io/gorm"
 	demouser "rpc/kitex_gen/user"
 	"user/dal/model"
 	db "user/dal/mysql"
 	"user/dal/redis"
+	"user/pkg/errno"
 	"user/pkg/logger"
 )
 
@@ -26,20 +28,31 @@ func (s *AddFollowCountService) AddFollowCount(request *demouser.AddFollowCountR
 	// Update UserCount from Redis
 	err = redis.AddFollowCount(s.ctx, userCountKey)
 	if logger.CheckError(err, "Redis AddFollowCount err") {
-		return
+		return errno.UpdateUserCountFailedErr
 	}
 	err = redis.AddFollowerCount(s.ctx, targetCountKey)
 	if logger.CheckError(err, "Redis AddFollowerCount err") {
-		return
+		return errno.UpdateUserCountFailedErr
 	}
 	// Update UserCount From Mysql
-	err = db.AddFollowCountByUserId(s.ctx, request.GetUserId())
-	if logger.CheckError(err, "Mysql AddFollowCount err") {
-		return
-	}
-	err = db.AddFollowerCountByUserId(s.ctx, request.GetTargetId())
-	if logger.CheckError(err, "Mysql AddFollowerCount err") {
-		return
-	}
-	return
+	err = db.MyTransaction(db.DB, func(tx *gorm.DB) (err error) {
+		err = db.AddFollowCountByUserId(s.ctx, tx, request.GetUserId())
+		if logger.CheckError(err, "Mysql AddFollowCount err") {
+			return errno.UpdateUserCountFailedErr
+		}
+		err = db.AddFollowerCountByUserId(s.ctx, tx, request.GetTargetId())
+		if logger.CheckError(err, "Mysql AddFollowerCount err") {
+			return errno.UpdateUserCountFailedErr
+		}
+		return nil
+	})
+	//err = db.AddFollowCountByUserId(s.ctx, db.DB, request.GetUserId())
+	//if logger.CheckError(err, "Mysql AddFollowCount err") {
+	//	return errno.UpdateUserCountFailedErr
+	//}
+	//err = db.AddFollowerCountByUserId(s.ctx, request.GetTargetId())
+	//if logger.CheckError(err, "Mysql AddFollowerCount err") {
+	//	return errno.UpdateUserCountFailedErr
+	//}
+	return nil
 }
